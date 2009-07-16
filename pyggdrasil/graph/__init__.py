@@ -4,6 +4,7 @@ Graph
 
     Fields
     ---
+    base - the base node used for graph generation
     radius - the preconfigured node radius used for generation
     width - the width of the entire graph
     height - the height of the entire graph
