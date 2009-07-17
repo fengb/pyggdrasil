@@ -1,39 +1,80 @@
+import itertools
+
+from pyggdrasil import model
+
+
 class Graph(object):
     def __init__(self, base, radius):
         self.base = base
         self.radius = radius
+        self.low_graph = LowGraph(base, radius)
 
-        self._subgraph_breadths = {}
-        self._subgraph_depths = {}
+        self._positions = {}
 
     @property
     def width(self):
-        return self.subgraph_breadth(self.base) * self.radius * 2
+        return self.low_graph.width
 
     @property
     def height(self):
-        return self.subgraph_depth(self.base) * self.radius * 2
+        return self.low_graph.height
 
     def __iter__(self):
-        pass
+        return model.unroll(self.base)
 
     def __getitem__(self, node):
-        pass
+        if node not in self._positions[iternode]:
+            for (iternode, complexpos) in self.low_graph.node_with_positions():
+                # Positions are in complex form so we convert to tuples
+                self._positions[iternode] = (complexpos.real, complexpos.imag)
+        return self._positions[node]
 
-    def subgraph_breadth(self, node):
-        if node not in self._subgraph_breadths:
-            if children:
-                self._subgraph_breadths[node] = sum(self.subgraph_breadth(child)
-                                                  for child in node.children)
-            else:
-                self._subgraph_breadths[node] = 1
-        return self._subgraph_breadths[node]
 
-    def subgraph_depth(self, node):
-        if node not in self._subgraph_depths:
-            if children:
-                self._subgraph_depths[node] = 1 + max(self.node_height(child)
-                                                       for child in node.children)
+class LowGraph(object):
+    """Low level object used in conjunction with Graph.  A SubGraph is
+    generated per Node and recurses similarly.
+
+    The children are stored in a list instead of a set to maintain order.
+    """
+    def __init__(self, node, radius):
+        self.node = node
+        self.radius = radius
+        self.children = [LowGraph(child) for child in node.children]
+
+        self._width = None
+        self._height = None
+
+    @property
+    def width(self):
+        if not self._width:
+            if self.children:
+                self._width = sum(child.width for child in self.children)
             else:
-                self._subgraph_depths[node] = 1
-        return self._subgraph_depths[node]
+                self._width = radius * 2
+        return self._width
+
+    @property
+    def height(self):
+        if not self._height:
+            if self.children:
+                self._height = radius * 2 + max(child.height
+                                                   for child in self.children)
+            else:
+                self._height = radius * 2
+        return self._height
+
+    def nodes_with_positions(self, offset=complex(0, 0)):
+        """Apply an optional offset and return an iterator of all the
+        decendents.  Each item is in the form (node, (x, y)).  Positions
+        are defined using complex numbers for speed and code clarity.
+        """
+        x = width / 2.0
+        y = height - radius
+
+        yield (self.node, complex(x, y) + offset)
+
+        for (node, position) in self.nodes_with_positions:
+            yield (node, position + offset)
+            # Each child pushes following children horizontally but not
+            # vertically.  Complex real == x coord.
+            offset = offset + position.real
