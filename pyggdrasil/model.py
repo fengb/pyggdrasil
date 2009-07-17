@@ -1,3 +1,5 @@
+import itertools
+
 class Node(object):
     """A single node of a tree. The tree is bidirectional: having a reference to
     both the parent and the children.
@@ -11,7 +13,11 @@ class Node(object):
         self.children = set()
 
     def get_parent(self):
-        return self._parent
+        try:
+            return self._parent
+        except AttributeError:
+            self._parent = None
+            return self._parent
 
     def set_parent(self, value):
         if self.parent:
@@ -20,3 +26,13 @@ class Node(object):
             value.children.add(self)
         self._parent = value
     parent = property(get_parent, set_parent)
+
+
+def unroll(node):
+    """Unroll tree node and return an iterator of all the represented nodes.
+
+    Arguments:
+    node -- object must implement the method children(self) -> iterable
+    """
+    return itertools.chain([node], *itertools.chain(unroll(child)
+                                        for child in node.children))
