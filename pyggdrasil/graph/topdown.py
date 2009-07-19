@@ -1,5 +1,3 @@
-import itertools
-
 from pyggdrasil import model
 
 
@@ -24,9 +22,8 @@ class Graph(object):
 
     def __getitem__(self, node):
         if node not in self._positions[iternode]:
-            for (iternode, complexpos) in self.low_graph.node_with_positions():
-                # Positions are in complex form so we convert to tuples
-                self._positions[iternode] = (complexpos.real, complexpos.imag)
+            for (iternode, position) in self.low_graph.node_with_positions():
+                self._positions[iternode] = position
         return self._positions[node]
 
 
@@ -63,18 +60,18 @@ class LowGraph(object):
                 self._height = radius * 2
         return self._height
 
-    def nodes_with_positions(self, offset=complex(0, 0)):
+    def nodes_with_positions(self):
         """Apply an optional offset and return an iterator of all the
-        decendents.  Each item is in the form (node, (x, y)).  Positions
-        are defined using complex numbers for speed and code clarity.
+        decendents.  Each item is in the form (node, (x, y)).
         """
         x = width / 2.0
         y = height - radius
 
-        yield (self.node, complex(x, y) + offset)
+        yield (self.node, complex(x, y))
 
+        offset = complex(0, 0)
         for (node, position) in self.nodes_with_positions:
             yield (node, position + offset)
             # Each child pushes following children horizontally but not
-            # vertically.  Complex real == x coord.
+            # vertically.  position.real <=> real + 0j <=> (x, 0)
             offset = offset + position.real
