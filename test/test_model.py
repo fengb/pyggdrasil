@@ -13,19 +13,31 @@ class TestNode(object):
         assert child1 in self.node.children
         assert child2 in self.node.children
 
+    def test_remove_corresponding_child(self):
+        child1 = model.Node(None, self.node)
+        child2 = model.Node(None, self.node)
+        child1.parent = None
+        child2.parent = None
+        assert len(self.node.children) == 0
 
-def test_unroll():
+
+def test_unroll_in_order_of_node_then_children_then_descendents():
+    # TODO: Less hardcode, more awesome code
     node1 = model.Node(None)
     node11 = model.Node(None, node1)
     node12 = model.Node(None, node1)
     node13 = model.Node(None, node1)
+    node111 = model.Node(None, node11)
     node131 = model.Node(None, node13)
+    node1311 = model.Node(None, node13)
 
-    nodes = set(model.unroll(node1))
+    nodes = list(model.unroll(node1))
 
-    assert node1 in nodes
-    assert node11 in nodes
-    assert node12 in nodes
-    assert node13 in nodes
-    assert node131 in nodes
-    assert len(nodes) == 5
+    assert nodes[0] == node1
+    assert nodes[1] == node11
+    assert nodes[2] == node12
+    assert nodes[3] == node13
+    assert nodes[4] == node111
+    assert nodes[5] == node131
+    assert nodes[6] == node1311
+    assert len(nodes) == 7
