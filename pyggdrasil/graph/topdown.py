@@ -2,10 +2,9 @@ from pyggdrasil import model
 
 
 class Graph(object):
-    def __init__(self, base, radius):
+    def __init__(self, base)
         self.base = base
-        self.radius = radius
-        self.low_graph = LowGraph(base, radius)
+        self.low_graph = LowGraph(base)
 
         self._positions = {}
 
@@ -33,9 +32,8 @@ class LowGraph(object):
 
     The children are stored in a list instead of a set to maintain order.
     """
-    def __init__(self, node, radius):
+    def __init__(self, node):
         self.node = node
-        self.radius = radius
         self.children = [LowGraph(child) for child in node.children]
 
         self._width = None
@@ -47,17 +45,16 @@ class LowGraph(object):
             if self.children:
                 self._width = sum(child.width for child in self.children)
             else:
-                self._width = radius * 2
+                self._width = 1
         return self._width
 
     @property
     def height(self):
         if not self._height:
             if self.children:
-                self._height = radius * 2 + max(child.height
-                                                   for child in self.children)
+                self._height = 1 + max(child.height for child in self.children)
             else:
-                self._height = radius * 2
+                self._height = 1
         return self._height
 
     def nodes_with_positions(self):
@@ -65,7 +62,7 @@ class LowGraph(object):
         decendents.  Each item is in the form (node, (x, y)).
         """
         x = width / 2.0
-        y = height - radius
+        y = height - 0.5
 
         yield (self.node, complex(x, y))
 
