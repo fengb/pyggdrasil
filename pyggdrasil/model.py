@@ -1,5 +1,9 @@
 import itertools
 
+
+class NodeParseException(Exception): pass
+
+
 class Node(object):
     """A single node of a tree. The tree is bidirectional: having a reference to
     both the parent and the children.
@@ -7,10 +11,11 @@ class Node(object):
     When setting parent, the class will automatically set the corresponding
     children. (This does not happen when operating on children).
     """
-    def __init__(self, data, parent=None):
+    def __init__(self, id, data, parent=None):
         # Needed to prevent self.parent=  from exploding
         self._parent = None
 
+        self.id = id
         self.data = data
         self.children = []
         self.parent = parent
@@ -25,6 +30,37 @@ class Node(object):
             value.children.append(self)
         self._parent = value
     parent = property(get_parent, set_parent)
+
+    def raw(self, renameme=None):
+        """"""
+        if renameme is None:
+            renameme = {'nodes': {}, 'data': {}}
+
+        if self.parent:
+            renameme['nodes'][self.id] = self.parent.id
+        else:
+            renameme['nodes'][self.id] = None
+        renameme['data'][self.id] = self.data
+        for child in self.children:
+            child.raw(renameme)
+
+        return renameme
+
+    @classmethod
+    def from_raw(cls, raw):
+        nodes = {}
+        for (id, data) in raw['data'].items():
+            nodes[id] = cls(id, data)
+
+        for (id, parent_id) in raw['nodes'].items():
+            if parent_id:
+                nodes[id].parent = nodes[parent_id]
+
+        roots = [node for node in nodes.values() if not node.parent]
+        if len(roots) != 1:
+            raise NodeParseException(raw)
+
+        return roots[0]
 
 
 def unroll(node):
