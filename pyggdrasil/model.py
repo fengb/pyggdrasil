@@ -34,12 +34,12 @@ class Node(object):
     def raw(self, renameme=None):
         """"""
         if renameme is None:
-            renameme = {'nodes': {}, 'data': {}}
+            renameme = {'nodes': [], 'data': {}}
 
         if self.parent:
-            renameme['nodes'][self.id] = self.parent.id
+            renameme['nodes'].append((self.id, self.parent.id))
         else:
-            renameme['nodes'][self.id] = None
+            renameme['nodes'].append((self.id, None))
         renameme['data'][self.id] = self.data
         for child in self.children:
             child.raw(renameme)
@@ -52,7 +52,7 @@ class Node(object):
         for (id, data) in raw['data'].items():
             nodes[id] = cls(id, data)
 
-        for (id, parent_id) in raw['nodes'].items():
+        for (id, parent_id) in raw['nodes']:
             if parent_id:
                 nodes[id].parent = nodes[parent_id]
 

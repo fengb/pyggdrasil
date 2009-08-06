@@ -9,6 +9,13 @@ Graph - any iterable with the following requirements:
 """
 
 
+from . import topdown
+
+
+def generate(root, algorithm=topdown):
+    return NormalizedGraph(algorithm.generate(root))
+
+
 class NormalizedGraph(object):
     """A Graph implementation with more functionality.
     Normalization calculates the minimum sized box (width, height) that can
@@ -36,7 +43,7 @@ class NormalizedGraph(object):
         self.height = ymax - ymin
 
         offset = complex(xmin, ymin)
-        self._graph = [(node, pos + offset) for (node, pos) in cached]
+        self._graph = [(node, pos - offset) for (node, pos) in cached]
 
     def __iter__(self):
         return iter(self._graph)
