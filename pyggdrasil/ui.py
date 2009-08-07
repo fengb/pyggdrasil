@@ -38,11 +38,10 @@ class Main(wx.Frame):
 class Graph(wx.ScrolledWindow):
     def __init__(self, graph, radius, padding, *args, **kwargs):
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
-        self.SetScrollRate(1, 1)
 
-        self.graph = graph
         self.radius = radius
         self.padding = padding
+        self.graph = graph
 
         self.Bind(wx.EVT_PAINT, self.Redraw)
 
@@ -51,25 +50,30 @@ class Graph(wx.ScrolledWindow):
 
     def setgraph(self, graph):
         self._graph = graph
-        self.SetSize((graph.width, graph.height))
+
+        scalar = 2 * (self.radius + self.padding)
+        self.nodes = dict((node, pos * scalar)
+                              for (node, pos) in self.graph)
+
+        self.SetScrollbars(1, 1, graph.width * scalar, graph.height * scalar)
 
     graph = property(getgraph, setgraph)
 
 
     def Redraw(self, event=None):
         dc = wx.PaintDC(self)
+        self.DoPrepareDC(dc)
         dc.Clear()
 
-        nodes = dict((node, pos * 2 * (self.radius + self.padding))
-                              for (node, pos) in self.graph)
-
-        for node in nodes:
+        for node in self.nodes:
             if node.parent:
-                np = nodes[node]
-                pp = nodes[node.parent]
-                dc.DrawLine(np.real, np.imag, pp.real, pp.imag)
+                # Offset to draw line ending at top edge
+                npos = self.nodes[node]
+                ppos = self.nodes[node.parent]
 
-        for (node, pos) in nodes.items():
+                dc.DrawLine(npos.real, npos.imag, ppos.real, ppos.imag)
+
+        for (node, pos) in self.nodes.items():
             dc.DrawCircle(pos.real, pos.imag, self.radius)
 
             w, h = dc.GetTextExtent(node.id)
