@@ -1,6 +1,3 @@
-from pyggdrasil import model
-
-
 def generate(root):
     return Graph(root)
 
