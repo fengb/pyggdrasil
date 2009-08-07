@@ -18,7 +18,7 @@ class Main(wx.Frame):
         self.SetMenuBar(menubar)
 
         nb = wx.Notebook(self, -1)
-        self.graph = Graph(pyggdrasil.graph.generate(root), 30, 5, nb)
+        self.graph = Graph(pyggdrasil.graph.generate(root), 40, 5, nb)
         self.graph.Redraw()
         nb.AddPage(self.graph, 'Visualize')
         self.graph.SetFocus()
@@ -71,7 +71,9 @@ class Graph(wx.ScrolledWindow):
 
         for (node, pos) in nodes.items():
             dc.DrawCircle(pos.real, pos.imag, self.radius)
-            dc.DrawText(node.id, pos.real, pos.imag)
+
+            w, h = dc.GetTextExtent(node.id)
+            dc.DrawText(node.id, pos.real - w/2.0, pos.imag - h/2.0)
 
         dc.EndDrawing()
 
