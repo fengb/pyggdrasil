@@ -63,24 +63,21 @@ class Node(object):
         return roots[0]
 
 
-def unroll(node):
-    """Unroll tree node and return an iterator of all the represented nodes.
-    Order is defined as current node, then children, then children's children,
-    etc., with children having same order as the data structure.
+    def unroll(self):
+        """Unroll tree node and return an iterator of all the represented nodes.
+        Order is defined as current node, then children, then children's
+        children, etc., with children having same order as the data structure.
+        """
+        yield self
 
-    Arguments:
-    node -- object must implement the method children(self) -> iterable
-    """
-    yield node
+        childreniters = [child.unroll() for child in self.children]
 
-    childreniters = [unroll(child) for child in node.children]
+        # Grab children manually
+        for iter in childreniters:
+            yield iter.next()
 
-    # Grab children manually
-    for iter in childreniters:
-        yield iter.next()
-
-    # Iterators should only contain non-children descendents now
-    for iter in childreniters:
-        for item in iter:
-            yield item
+        # Iterators should only contain non-children descendents now
+        for iter in childreniters:
+            for item in iter:
+                yield item
 
