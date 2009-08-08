@@ -5,14 +5,21 @@ import pyggdrasil
 
 
 class Main(wx.Frame):
-    def __init__(self, root, *args, **kwargs):
+    def __init__(self, root=None, filename=None, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
+
+        self.root = root
+        self.filename = filename
 
         menubar = wx.MenuBar()
 
         file = wx.Menu()
-        file.Append(102, '&Open')
+        file.Append(102, '&Open...')
         wx.EVT_MENU(self, 102, self.OnOpen)
+        file.Append(103, '&Save')
+        wx.EVT_MENU(self, 103, self.OnSave)
+        file.Append(104, 'Save &As...')
+        wx.EVT_MENU(self, 104, self.OnSaveAs)
         menubar.Append(file, '&File')
 
         self.SetMenuBar(menubar)
@@ -24,16 +31,41 @@ class Main(wx.Frame):
         nb.AddPage(self.tree, 'Tree')
         self.graph.SetFocus()
 
+    def getfilename(self):
+        return self._filename
+    def setfilename(self, value):
+        self._filename = value
+        self.SetTitle('Pyggdrasil - ' + (self.filename or 'new'))
+    filename = property(getfilename, setfilename)
+
     def OnOpen(self, event):
         filename = wx.LoadFileSelector('Pyggdrasil', extension='pyg', parent=self)
         if filename:
             file = open(filename)
             try:
                 root = pyggdrasil.model.Node.from_raw(yaml.load(file))
-                frame = Main(root, self.GetParent(), -1, 'Pyggdrasil - ' + filename)
+                frame = Main(root, filename, self.GetParent(), -1)
                 frame.Show(True)
             finally:
                 file.close()
+
+    def OnSave(self, event):
+        if self.filename:
+            self._Save()
+        else:
+            self.OnSaveAs(event)
+
+    def OnSaveAs(self, event):
+        filename = wx.SaveFileSelector('Pyggdrasil', extension='pyg', parent=self)
+        if filename:
+            self._Save()
+
+    def _Save(self):
+        file = open(self.filename, 'w')
+        try:
+            yaml.dump(self.root.raw(), file)
+        finally:
+            file.close()
 
 
 class Graph(wx.ScrolledWindow):
@@ -98,6 +130,6 @@ class Tree(wx.Panel):
 class App(wx.App):
     def OnInit(self):
         root = pyggdrasil.model.Node('root', None)
-        frame = Main(root, None, -1, 'Pyggdrasil - new')
+        frame = Main(root, parent=None, id=-1)
         frame.Show(True)
         return True
