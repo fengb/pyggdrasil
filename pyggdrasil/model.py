@@ -31,37 +31,17 @@ class Node(object):
         self._parent = value
     parent = property(get_parent, set_parent)
 
-    def raw(self, renameme=None):
-        """"""
-        if renameme is None:
-            renameme = {'nodes': [], 'data': {}}
+    def raw(self):
+        return {
+            'data': dict((node.id, node.data) for node in self.unroll()),
+            'structure': self._raw_structure(),
+        }
 
-        if self.parent:
-            renameme['nodes'].append((self.id, self.parent.id))
+    def _raw_structure(self):
+        if self.children:
+            return {self.id: [child._raw_structure() for child in self.children]}
         else:
-            renameme['nodes'].append((self.id, None))
-        renameme['data'][self.id] = self.data
-        for child in self.children:
-            child.raw(renameme)
-
-        return renameme
-
-    @classmethod
-    def from_raw(cls, raw):
-        nodes = {}
-        for (id, data) in raw['data'].items():
-            nodes[id] = cls(id, data)
-
-        for (id, parent_id) in raw['nodes']:
-            if parent_id:
-                nodes[id].parent = nodes[parent_id]
-
-        roots = [node for node in nodes.values() if not node.parent]
-        if len(roots) != 1:
-            raise NodeParseException(raw)
-
-        return roots[0]
-
+            return self.id
 
     def unroll(self):
         """Unroll tree node and return an iterator of all the represented nodes.
@@ -80,4 +60,29 @@ class Node(object):
         for iter in childreniters:
             for item in iter:
                 yield item
+
+    @classmethod
+    def from_raw(cls, raw):
+        nodes = dict((id, cls(id, data)) for (id, data) in raw['data'].items())
+
+        cls._process_raw_structure(raw['structure'], nodes)
+
+        roots = [node for node in nodes.values() if not node.parent]
+        if len(roots) != 1:
+            raise NodeParseException(raw)
+
+        return roots[0]
+
+    @classmethod
+    def _process_raw_structure(cls, structure, nodes):
+        if isinstance(structure, basestring):
+            return structure
+        else:
+            if len(structure) != 1:
+                raise NodeParseException()
+            for (id, children) in structure.items():
+                for child in children:
+                    child_id = cls._process_raw_structure(child, nodes)
+                    nodes[child_id].parent = nodes[id]
+                return id
 
