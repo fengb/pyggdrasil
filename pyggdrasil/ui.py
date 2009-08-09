@@ -58,6 +58,7 @@ class Main(wx.Frame):
     def OnSaveAs(self, event):
         filename = wx.SaveFileSelector('Pyggdrasil', extension='pyg', parent=self)
         if filename:
+            self.filename = filename
             self._Save()
 
     def _Save(self):
