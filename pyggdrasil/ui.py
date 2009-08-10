@@ -144,7 +144,9 @@ class Tree(wx.Panel):
 
         box = wx.BoxSizer(wx.VERTICAL)
 
-        self.tree = wx.TreeCtrl(self, -1)
+        self.tree = wx.TreeCtrl(self, -1,
+                                style=(wx.TR_EDIT_LABELS | wx.TR_HAS_BUTTONS))
+        self.tree.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnRename)
         box.Add(self.tree, 1, wx.EXPAND)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -183,24 +185,32 @@ class Tree(wx.Panel):
         for child in node.children:
             self._PopulateTreeItem(child, treeitem)
 
+    def OnRename(self, event):
+        selectedid = self.tree.GetSelection()
+        nodeid = event.GetLabel()
+        self.nodes[selectedid].id = str(nodeid)
+
     def OnAdd(self, event):
         selectedid = self.tree.GetSelection()
         nodeid = self.childinput.GetValue()
 
-        node = pyggdrasil.model.Node(nodeid, None, self.nodes[selectedid])
+        if nodeid:
+            node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[selectedid])
 
-        newid = self.tree.AppendItem(selectedid, nodeid)
-        self.nodes[newid] = node
-        self.tree.Expand(selectedid)
+            newid = self.tree.AppendItem(selectedid, nodeid)
+            self.nodes[newid] = node
+            self.tree.Expand(selectedid)
+
+            self.childinput.Clear()
 
     def OnRemove(self, event):
         #TODO: Deal with children somehow
-        treeid = self.tree.GetSelection()
+        selectedid = self.tree.GetSelection()
 
-        self.nodes[treeid].parent = None
-        del self.nodes[treeid]
+        self.nodes[selectedid].parent = None
+        del self.nodes[selectedid]
 
-        self.tree.Delete(treeid)
+        self.tree.Delete(selectedid)
 
 
 class App(wx.App):
