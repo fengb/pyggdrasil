@@ -109,6 +109,35 @@ class Graph(wx.ScrolledWindow):
         dc.EndDrawing()
 
 
+class EqualsDict(object):
+    """Data structure to emulate a dict.
+
+    Allow the use of non-hashables as key but performance is very slow.
+    """
+    def __init__(self):
+        self._items = []
+
+    def __getitem__(self, key):
+        for item in self._items:
+            if key == item[0]:
+                return item[1]
+
+        raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        for item in self._items:
+            if key == item[0]:
+                item[1] = value
+                break
+        else:
+            self._items.append([key, value])
+
+    def __delitem__(self, key):
+        for (i, item) in enumerate(self._items):
+            if key == item[0]:
+                self._items.pop(i)
+                break
+
 class Tree(wx.Panel):
     def __init__(self, root, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
@@ -137,38 +166,39 @@ class Tree(wx.Panel):
         self.SetSizer(box)
 
         self.root = root
-        self.nodes = dict((node.id, node) for node in self.root.unroll())
         self.Refresh()
 
     def Refresh(self):
         self.tree.DeleteAllItems()
-        self._PopulateTree(self.root, None)
+        self.nodes = EqualsDict()
+        self._PopulateTreeItem(self.root, None)
 
-    def _PopulateTree(self, node, parent):
+    def _PopulateTreeItem(self, node, parent):
         if parent:
             treeitem = self.tree.AppendItem(parent, node.id)
         else:
             treeitem = self.tree.AddRoot(node.id)
+        self.nodes[treeitem] = node
+
         for child in node.children:
-            self._PopulateTree(child, treeitem)
+            self._PopulateTreeItem(child, treeitem)
 
     def OnAdd(self, event):
-        treeid = self.tree.GetSelection()
+        selectedid = self.tree.GetSelection()
         nodeid = self.childinput.GetValue()
 
-        parentid = self.tree.GetItemText(treeid)
-        node = pyggdrasil.model.Node(nodeid, None, self.nodes[parentid])
+        node = pyggdrasil.model.Node(nodeid, None, self.nodes[selectedid])
 
-        self.tree.AppendItem(treeid, nodeid)
-        self.tree.Expand(treeid)
+        newid = self.tree.AppendItem(selectedid, nodeid)
+        self.nodes[newid] = node
+        self.tree.Expand(selectedid)
 
     def OnRemove(self, event):
         #TODO: Deal with children somehow
         treeid = self.tree.GetSelection()
 
-        nodeid = self.tree.GetItemText(treeid)
-        self.nodes[nodeid].parent = None
-        del self.nodes[nodeid]
+        self.nodes[treeid].parent = None
+        del self.nodes[treeid]
 
         self.tree.Delete(treeid)
 
