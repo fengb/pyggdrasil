@@ -1,7 +1,11 @@
 import wx
+import wx.lib.newevent
 import yaml
 
 import pyggdrasil
+
+
+TreeChangedEvent, EVT_TREE_CHANGED_EVENT = wx.lib.newevent.NewEvent()
 
 
 class Main(wx.Frame):
@@ -24,12 +28,14 @@ class Main(wx.Frame):
 
         self.SetMenuBar(menubar)
 
-        notebook = wx.Notebook(self, -1)
+        notebook = wx.Notebook(self, wx.ID_ANY)
         self.graph = Graph(root, 40, 5, notebook)
         notebook.AddPage(self.graph, 'Visualize')
         self.tree = Tree(root, notebook)
         notebook.AddPage(self.tree, 'Tree')
         self.graph.SetFocus()
+
+        self.tree.Bind(EVT_TREE_CHANGED_EVENT, self.OnTreeChange)
 
     def getfilename(self):
         return self._filename
@@ -44,7 +50,7 @@ class Main(wx.Frame):
             file = open(filename)
             try:
                 root = pyggdrasil.model.Node.from_raw(yaml.load(file))
-                frame = Main(root, filename, self.GetParent(), -1)
+                frame = Main(root, filename, self.GetParent(), wx.ID_ANY)
                 frame.Show(True)
             finally:
                 file.close()
@@ -67,6 +73,9 @@ class Main(wx.Frame):
             yaml.dump(self.root.raw(), file)
         finally:
             file.close()
+
+    def OnTreeChange(self, event):
+        self.graph.Refresh()
 
 
 class Graph(wx.ScrolledWindow):
@@ -138,13 +147,14 @@ class EqualsDict(object):
                 self._items.pop(i)
                 break
 
+
 class Tree(wx.Panel):
     def __init__(self, root, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
 
         box = wx.BoxSizer(wx.VERTICAL)
 
-        self.tree = wx.TreeCtrl(self, -1,
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY,
                                 style=(wx.TR_EDIT_LABELS | wx.TR_HAS_BUTTONS))
         self.tree.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnRename)
         self.tree.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
@@ -154,7 +164,7 @@ class Tree(wx.Panel):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         box.Add(hbox, 0, wx.EXPAND)
 
-        self.childinput = wx.TextCtrl(self, -1)
+        self.childinput = wx.TextCtrl(self, wx.ID_ANY)
         hbox.Add(self.childinput)
 
         add = wx.Button(self, wx.ID_ADD, 'Add Child')
@@ -192,6 +202,8 @@ class Tree(wx.Panel):
         nodeid = event.GetLabel()
         self.nodes[selectedid].id = str(nodeid)
 
+        wx.PostEvent(self, TreeChangedEvent())
+
     def OnAdd(self, event):
         selectedid = self.tree.GetSelection()
         nodeid = self.childinput.GetValue()
@@ -205,6 +217,8 @@ class Tree(wx.Panel):
 
             self.childinput.Clear()
 
+            wx.PostEvent(self, TreeChangedEvent())
+
     def OnRemove(self, event):
         #TODO: Deal with children somehow
         selectedid = self.tree.GetSelection()
@@ -213,6 +227,8 @@ class Tree(wx.Panel):
         del self.nodes[selectedid]
 
         self.tree.Delete(selectedid)
+
+        wx.PostEvent(self, TreeChangedEvent())
 
     def OnBeginDrag(self, event):
         self._dragitem = event.GetItem()
@@ -234,10 +250,12 @@ class Tree(wx.Panel):
         self.tree.AppendItem(parent, text)
         self.tree.Expand(parent)
 
+        wx.PostEvent(self, TreeChangedEvent())
+
 
 class App(wx.App):
     def OnInit(self):
         root = pyggdrasil.model.Node('root', None)
-        frame = Main(root, parent=None, id=-1)
+        frame = Main(root, parent=None, id=wx.ID_ANY)
         frame.Show(True)
         return True
