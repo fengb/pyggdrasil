@@ -86,3 +86,37 @@ class Node(object):
                     nodes[child_id].parent = nodes[id]
                 return id
 
+
+class EqualsDict(object):
+    """Data structure to emulate a dict.
+
+    Allow the use of non-hashables as key but performance is very slow.
+    """
+    def __init__(self):
+        self._items = []
+
+    def __getitem__(self, key):
+        for item in self._items:
+            if key == item[0]:
+                return item[1]
+
+        raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        for item in self._items:
+            if key == item[0]:
+                item[1] = value
+                break
+        else:
+            self._items.append([key, value])
+
+    def __delitem__(self, key):
+        self.pop(key)
+
+    def pop(self, key):
+        for (i, item) in enumerate(self._items):
+            if key == item[0]:
+                item = self._items.pop(i)
+                return item[1]
+
+        raise KeyError(key)

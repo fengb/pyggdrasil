@@ -64,6 +64,8 @@ class Main(wx.Frame):
     def OnSaveAs(self, event):
         filename = wx.SaveFileSelector('Pyggdrasil', extension='pyg', parent=self)
         if filename:
+            if '.' not in filename:
+                filename += '.pyg'
             self.filename = filename
             self._Save()
 
@@ -118,36 +120,6 @@ class Graph(wx.ScrolledWindow):
         dc.EndDrawing()
 
 
-class EqualsDict(object):
-    """Data structure to emulate a dict.
-
-    Allow the use of non-hashables as key but performance is very slow.
-    """
-    def __init__(self):
-        self._items = []
-
-    def __getitem__(self, key):
-        for item in self._items:
-            if key == item[0]:
-                return item[1]
-
-        raise KeyError(key)
-
-    def __setitem__(self, key, value):
-        for item in self._items:
-            if key == item[0]:
-                item[1] = value
-                break
-        else:
-            self._items.append([key, value])
-
-    def __delitem__(self, key):
-        for (i, item) in enumerate(self._items):
-            if key == item[0]:
-                self._items.pop(i)
-                break
-
-
 class Tree(wx.Panel):
     def __init__(self, root, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
@@ -184,7 +156,7 @@ class Tree(wx.Panel):
 
     def Refresh(self):
         self.tree.DeleteAllItems()
-        self.nodes = EqualsDict()
+        self.nodes = pyggdrasil.model.EqualsDict()
         self._PopulateTreeItem(self.root, None)
 
     def _PopulateTreeItem(self, node, parent):
@@ -237,18 +209,25 @@ class Tree(wx.Panel):
 
     def OnEndDrag(self, event):
         #TODO: Deal with children somehow
-        if not event.GetItem().IsOk():
+        parent = event.GetItem()
+
+        if not parent.IsOk():
+            return
+        if parent == self.tree.GetItemParent(self._dragitem):
             return
         try:
-            old = self._dragitem
+            oldid = self._dragitem
         except AttributeError:
             return
 
-        parent = event.GetItem()
-        text = self.tree.GetItemText(old)
-        self.tree.Delete(old)
-        self.tree.AppendItem(parent, text)
+        text = self.tree.GetItemText(oldid)
+        self.tree.Delete(oldid)
+        newid = self.tree.AppendItem(parent, text)
         self.tree.Expand(parent)
+
+        node = self.nodes.pop(oldid)
+        self.nodes[newid] = node
+        node.parent = self.nodes[parent]
 
         wx.PostEvent(self, TreeChangedEvent())
 
