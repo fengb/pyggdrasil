@@ -147,6 +147,8 @@ class Tree(wx.Panel):
         self.tree = wx.TreeCtrl(self, -1,
                                 style=(wx.TR_EDIT_LABELS | wx.TR_HAS_BUTTONS))
         self.tree.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnRename)
+        self.tree.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
+        self.tree.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
         box.Add(self.tree, 1, wx.EXPAND)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -211,6 +213,26 @@ class Tree(wx.Panel):
         del self.nodes[selectedid]
 
         self.tree.Delete(selectedid)
+
+    def OnBeginDrag(self, event):
+        self._dragitem = event.GetItem()
+        if self._dragitem.IsOk():
+            event.Allow()
+
+    def OnEndDrag(self, event):
+        #TODO: Deal with children somehow
+        if not event.GetItem().IsOk():
+            return
+        try:
+            old = self._dragitem
+        except AttributeError:
+            return
+
+        parent = event.GetItem()
+        text = self.tree.GetItemText(old)
+        self.tree.Delete(old)
+        self.tree.AppendItem(parent, text)
+        self.tree.Expand(parent)
 
 
 class App(wx.App):
