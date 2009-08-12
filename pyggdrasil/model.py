@@ -97,14 +97,14 @@ class EqualsDict(object):
 
     def __getitem__(self, key):
         for item in self._items:
-            if key == item[0]:
+            if item[0] == key:
                 return item[1]
 
         raise KeyError(key)
 
     def __setitem__(self, key, value):
         for item in self._items:
-            if key == item[0]:
+            if item[0] == key:
                 item[1] = value
                 break
         else:
@@ -115,8 +115,15 @@ class EqualsDict(object):
 
     def pop(self, key):
         for (i, item) in enumerate(self._items):
-            if key == item[0]:
+            if item[0] == key:
                 item = self._items.pop(i)
                 return item[1]
 
         raise KeyError(key)
+
+    def getkey(self, value):
+        for item in self._items:
+            if item[1] == value:
+                return item[0]
+
+        raise KeyError(value)

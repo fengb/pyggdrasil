@@ -5,7 +5,8 @@ import yaml
 import pyggdrasil
 
 
-TreeChangedEvent, EVT_TREE_CHANGED_EVENT = wx.lib.newevent.NewEvent()
+TreeChangedEvent, TREE_CHANGED_EVENT = wx.lib.newevent.NewEvent()
+GraphSelectedEvent, GRAPH_SELECTED_EVENT = wx.lib.newevent.NewEvent()
 
 
 class Main(wx.Frame):
@@ -38,8 +39,9 @@ class Main(wx.Frame):
 
         self.SetSizer(box)
 
-        self.tree.Bind(EVT_TREE_CHANGED_EVENT, self.OnTreeChange)
-        self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnItemSelected)
+        self.tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
+        self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
+        self.graph.Bind(GRAPH_SELECTED_EVENT, self.OnGraphSelected)
 
     def getfilename(self):
         return self._filename
@@ -83,8 +85,11 @@ class Main(wx.Frame):
     def OnTreeChange(self, event):
         self.graph.Refresh()
 
-    def OnItemSelected(self, event):
+    def OnTreeSelected(self, event):
         self.graph.selected = self.tree.selected
+
+    def OnGraphSelected(self, event):
+        self.tree.selected = event.target
 
 
 class Graph(wx.ScrolledWindow):
@@ -95,9 +100,11 @@ class Graph(wx.ScrolledWindow):
         self.padding = padding
         self._selected = None
 
+
         self.root = root
         self.Refresh()
         self.Bind(wx.EVT_PAINT, self.Redraw)
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnMouseClick)
 
     def getselected(self):
         return self._selected
@@ -113,11 +120,13 @@ class Graph(wx.ScrolledWindow):
     selected = property(getselected, setselected)
 
     def Refresh(self):
+        self.selected = None
         graph = pyggdrasil.graph.generate(self.root)
 
         scalar = 2 * (self.radius + self.padding)
         self.nodes = dict((node, pos * scalar)
-                              for (node, pos) in graph)
+                                     for (node, pos) in graph)
+
         self.SetScrollbars(1, 1, graph.width * scalar, graph.height * scalar)
 
     def Redraw(self, event=None):
@@ -157,6 +166,17 @@ class Graph(wx.ScrolledWindow):
         if enddrawing:
             dc.EndDrawing()
 
+    def OnMouseClick(self, event):
+        dc = wx.PaintDC(self)
+        self.DoPrepareDC(dc)
+        click = tuple(event.GetLogicalPosition(dc))
+
+        for (node, pos) in self.nodes.items():
+            if (pos.real - self.radius) <= click[0] <= (pos.real + self.radius) and \
+               (pos.imag - self.radius) <= click[1] <= (pos.imag + self.radius):
+                wx.PostEvent(self, GraphSelectedEvent(target=node))
+                return
+
 
 class Tree(wx.Panel):
     def __init__(self, root, *args, **kwargs):
@@ -192,10 +212,12 @@ class Tree(wx.Panel):
         self.root = root
         self.Refresh()
 
-    @property
-    def selected(self):
-        '''Return the selected node'''
+    def getselected(self):
         return self.nodes[self.tree.GetSelection()]
+    def setselected(self, value):
+        treeid = self.nodes.getkey(value)
+        self.tree.SelectItem(treeid)
+    selected = property(getselected, setselected)
 
     def Refresh(self):
         self.tree.DeleteAllItems()
