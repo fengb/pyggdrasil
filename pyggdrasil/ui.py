@@ -38,7 +38,8 @@ class Main(wx.Frame):
 
         self.SetSizer(box)
 
-        #self.tree.Bind(EVT_TREE_CHANGED_EVENT, self.OnTreeChange)
+        self.tree.Bind(EVT_TREE_CHANGED_EVENT, self.OnTreeChange)
+        self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnItemSelected)
 
     def getfilename(self):
         return self._filename
@@ -82,6 +83,9 @@ class Main(wx.Frame):
     def OnTreeChange(self, event):
         self.graph.Refresh()
 
+    def OnItemSelected(self, event):
+        self.graph.selected = self.tree.selected
+
 
 class Graph(wx.ScrolledWindow):
     def __init__(self, root, radius, padding, *args, **kwargs):
@@ -89,10 +93,24 @@ class Graph(wx.ScrolledWindow):
 
         self.radius = radius
         self.padding = padding
+        self._selected = None
 
         self.root = root
         self.Refresh()
         self.Bind(wx.EVT_PAINT, self.Redraw)
+
+    def getselected(self):
+        return self._selected
+    def setselected(self, value):
+        if self._selected:
+            # Restore previous selected
+            self.DrawNode(self._selected)
+
+        self._selected = value
+
+        if value:
+            self.DrawNode(value, bgcolor='#FFFF80')
+    selected = property(getselected, setselected)
 
     def Refresh(self):
         graph = pyggdrasil.graph.generate(self.root)
@@ -114,13 +132,30 @@ class Graph(wx.ScrolledWindow):
 
                 dc.DrawLine(npos.real, npos.imag, ppos.real, ppos.imag)
 
-        for (node, pos) in self.nodes.items():
-            dc.DrawCircle(pos.real, pos.imag, self.radius)
-
-            w, h = dc.GetTextExtent(node.id)
-            dc.DrawText(node.id, pos.real - w/2.0, pos.imag - h/2.0)
+        for node in self.nodes:
+            self.DrawNode(node, dc)
 
         dc.EndDrawing()
+
+    def DrawNode(self, node, dc=None, bgcolor=None):
+        if dc == None:
+            dc = wx.PaintDC(self)
+            self.DoPrepareDC(dc)
+            enddrawing = True
+        else:
+            enddrawing = False
+
+        if bgcolor:
+            dc.SetBrush(wx.Brush(bgcolor))
+
+        pos = self.nodes[node]
+        dc.DrawCircle(pos.real, pos.imag, self.radius)
+
+        w, h = dc.GetTextExtent(node.id)
+        dc.DrawText(node.id, pos.real - w/2.0, pos.imag - h/2.0)
+
+        if enddrawing:
+            dc.EndDrawing()
 
 
 class Tree(wx.Panel):
@@ -156,6 +191,11 @@ class Tree(wx.Panel):
 
         self.root = root
         self.Refresh()
+
+    @property
+    def selected(self):
+        '''Return the selected node'''
+        return self.nodes[self.tree.GetSelection()]
 
     def Refresh(self):
         self.tree.DeleteAllItems()
