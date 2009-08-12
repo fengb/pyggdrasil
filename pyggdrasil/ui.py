@@ -28,14 +28,17 @@ class Main(wx.Frame):
 
         self.SetMenuBar(menubar)
 
-        notebook = wx.Notebook(self, wx.ID_ANY)
-        self.graph = Graph(root, 40, 5, notebook)
-        notebook.AddPage(self.graph, 'Visualize')
-        self.tree = Tree(root, notebook)
-        notebook.AddPage(self.tree, 'Tree')
-        self.graph.SetFocus()
+        box = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tree.Bind(EVT_TREE_CHANGED_EVENT, self.OnTreeChange)
+        self.tree = Tree(root, self)
+        box.Add(self.tree, 0, wx.EXPAND)
+
+        self.graph = Graph(root, 40, 5, self)
+        box.Add(self.graph, 1, wx.EXPAND)
+
+        self.SetSizer(box)
+
+        #self.tree.Bind(EVT_TREE_CHANGED_EVENT, self.OnTreeChange)
 
     def getfilename(self):
         return self._filename
