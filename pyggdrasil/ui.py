@@ -115,8 +115,8 @@ class Graph(wx.ScrolledWindow):
 
         self._selected = value
 
-        if value:
-            self.DrawNode(value, bgcolor='#FFFF80')
+        if self._selected:
+            self.DrawNode(self._selected, bgcolor='#FFFF80')
     selected = property(getselected, setselected)
 
     def Refresh(self):
@@ -143,6 +143,9 @@ class Graph(wx.ScrolledWindow):
 
         for node in self.nodes:
             self.DrawNode(node, dc)
+
+        if self.selected:
+            self.DrawNode(self.selected, bgcolor='#FFFF80')
 
         dc.EndDrawing()
 
