@@ -127,7 +127,9 @@ class Graph(wx.ScrolledWindow):
         self.nodes = dict((node, pos * scalar)
                                      for (node, pos) in graph)
 
+        pos = self.GetViewStart()
         self.SetScrollbars(1, 1, graph.width * scalar, graph.height * scalar)
+        self.Scroll(*pos)
 
     def Redraw(self, event=None):
         dc = wx.PaintDC(self)
