@@ -13,28 +13,37 @@ class Main(wx.Frame):
     def __init__(self, root=None, filename=None, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
 
-        self.root = root
+        self.root = root or pyggdrasil.model.Node('root', None)
         self.filename = filename
 
         menubar = wx.MenuBar()
 
         file = wx.Menu()
+        file.Append(wx.ID_NEW)
+        self.Bind(wx.EVT_MENU, self.OnNew, id=wx.ID_NEW)
         file.Append(wx.ID_OPEN)
-        wx.EVT_MENU(self, wx.ID_OPEN, self.OnOpen)
+        self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
+        file.AppendSeparator()
+
+        file.Append(wx.ID_CLOSE, 'Close\tCtrl-W')
+        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
         file.Append(wx.ID_SAVE)
-        wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
+        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
         file.Append(wx.ID_SAVEAS)
-        wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnSaveAs)
+        self.Bind(wx.EVT_MENU, self.OnSaveAs, id=wx.ID_SAVEAS)
+        file.AppendSeparator()
+
+        file.Append(wx.ID_EXIT)
         menubar.Append(file, '&File')
 
         self.SetMenuBar(menubar)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tree = Tree(root, self)
+        self.tree = Tree(self.root, self)
         box.Add(self.tree, 0, wx.EXPAND)
 
-        self.graph = Graph(root, 40, 5, self)
+        self.graph = Graph(self.root, 40, 5, self)
         box.Add(self.graph, 1, wx.EXPAND)
 
         self.SetSizer(box)
@@ -49,6 +58,10 @@ class Main(wx.Frame):
         self._filename = value
         self.SetTitle('Pyggdrasil - ' + (self.filename or 'new'))
     filename = property(getfilename, setfilename)
+
+    def OnNew(self, event):
+        frame = Main(parent=self.GetParent(), id=wx.ID_ANY)
+        frame.Show(True)
 
     def OnOpen(self, event):
         filename = wx.LoadFileSelector('Pyggdrasil', extension='pyg', parent=self)
@@ -81,6 +94,9 @@ class Main(wx.Frame):
             yaml.dump(self.root.raw(), file)
         finally:
             file.close()
+
+    def OnClose(self, event):
+        self.Close()
 
     def OnTreeChange(self, event):
         self.graph.Refresh()
@@ -304,7 +320,12 @@ class Tree(wx.Panel):
 
 class App(wx.App):
     def OnInit(self):
+        self.SetAppName('Pyggdrasil')
         root = pyggdrasil.model.Node('root', None)
-        frame = Main(root, parent=None, id=wx.ID_ANY)
+        frame = Main(parent=None, id=wx.ID_ANY)
+        frame.Bind(wx.EVT_MENU, self.OnMenuExit, id=wx.ID_EXIT)
         frame.Show(True)
         return True
+
+    def OnMenuExit(self, event):
+        self.ExitMainLoop()
