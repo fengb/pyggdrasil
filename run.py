@@ -1,5 +1,5 @@
 import pyggdrasil
 
 
-app = pyggdrasil.ui.App()
+app = pyggdrasil.ui.App(redirect=False)
 app.MainLoop()
