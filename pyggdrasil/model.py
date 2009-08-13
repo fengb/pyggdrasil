@@ -38,10 +38,7 @@ class Node(object):
         }
 
     def _raw_structure(self):
-        if self.children:
-            return {self.id: [child._raw_structure() for child in self.children]}
-        else:
-            return self.id
+        return {self.id: [child._raw_structure() for child in self.children]}
 
     def unroll(self):
         """Unroll tree node and return an iterator of all the represented nodes.
@@ -75,16 +72,13 @@ class Node(object):
 
     @classmethod
     def _process_raw_structure(cls, structure, nodes):
-        if isinstance(structure, basestring):
-            return structure
-        else:
-            if len(structure) != 1:
-                raise NodeParseException()
-            for (id, children) in structure.items():
-                for child in children:
-                    child_id = cls._process_raw_structure(child, nodes)
-                    nodes[child_id].parent = nodes[id]
-                return id
+        if len(structure) != 1:
+            raise NodeParseException()
+        for (id, children) in structure.items():
+            for child in children:
+                child_id = cls._process_raw_structure(child, nodes)
+                nodes[child_id].parent = nodes[id]
+            return id
 
 
 class EqualsDict(object):
