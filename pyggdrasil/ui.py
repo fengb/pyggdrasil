@@ -147,7 +147,7 @@ class Graph(wx.ScrolledWindow):
             self.DrawNode(node, dc)
 
         if self.selected:
-            self.DrawNode(self.selected, bgcolor='#FFFF80')
+            self.DrawNode(self.selected, dc=dc, bgcolor='#FFFF80')
 
         dc.EndDrawing()
 
