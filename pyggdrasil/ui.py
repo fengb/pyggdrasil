@@ -215,7 +215,8 @@ class Tree(wx.Panel):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         box.Add(hbox, 0, wx.EXPAND)
 
-        self.childinput = wx.TextCtrl(self, wx.ID_ANY)
+        self.childinput = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
+        self.childinput.Bind(wx.EVT_TEXT_ENTER, self.OnAdd)
         hbox.Add(self.childinput)
 
         add = wx.Button(self, wx.ID_ADD, 'Add Child')
@@ -294,7 +295,6 @@ class Tree(wx.Panel):
             event.Allow()
 
     def OnEndDrag(self, event):
-        #TODO: Deal with children somehow
         parent = event.GetItem()
 
         if not parent.IsOk():
@@ -308,12 +308,11 @@ class Tree(wx.Panel):
 
         text = self.tree.GetItemText(oldid)
         self.tree.Delete(oldid)
-        newid = self.tree.AppendItem(parent, text)
-        self.tree.Expand(parent)
 
         node = self.nodes.pop(oldid)
-        self.nodes[newid] = node
         node.parent = self.nodes[parent]
+        self._PopulateTreeItem(node, parent)
+        self.tree.Expand(parent)
 
         wx.PostEvent(self, TreeChangedEvent())
 
