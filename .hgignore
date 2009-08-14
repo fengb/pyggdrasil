@@ -1,3 +1,8 @@
 syntax: glob
 .*
 *.pyc
+*.egg-info
+
+syntax: regexp
+^build
+^dist
