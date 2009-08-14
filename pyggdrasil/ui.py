@@ -169,7 +169,7 @@ class Graph(wx.ScrolledWindow):
 
     def DrawNode(self, node, dc=None, bgcolor=None):
         if dc == None:
-            dc = wx.PaintDC(self)
+            dc = wx.ClientDC(self)
             self.DoPrepareDC(dc)
             enddrawing = True
         else:
@@ -188,7 +188,7 @@ class Graph(wx.ScrolledWindow):
             dc.EndDrawing()
 
     def OnMouseClick(self, event):
-        dc = wx.PaintDC(self)
+        dc = wx.ClientDC(self)
         self.DoPrepareDC(dc)
         click = tuple(event.GetLogicalPosition(dc))
 
