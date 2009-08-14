@@ -20,12 +20,26 @@ try:
         app=['pygg.pyw'],
         options=dict(
             py2app=dict(
-                packages='wx',
+                packages=['wx', 'yaml'],
                 site_packages=True,
             ),
         ),
     )
-except:
+except ImportError:
+    pass
+
+
+try:
+    import py2exe
+    args.update(
+        windows=['pygg.pyw'],
+        options=dict(
+            py2exe=dict(
+                dll_excludes=['MSVCP90.dll'],
+            ),
+        ),
+    )
+except ImportError:
     pass
 
 
