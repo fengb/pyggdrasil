@@ -152,12 +152,12 @@ class Graph(wx.ScrolledWindow):
         self.DoPrepareDC(dc)
         dc.Clear()
 
-        for node in self.nodes:
-            if node.parent:
-                npos = self.nodes[node]
-                ppos = self.nodes[node.parent]
-
-                dc.DrawLine(npos.real, npos.imag, ppos.real, ppos.imag)
+        positions = [(self.nodes[node], self.nodes[node.parent])
+                         for node in self.nodes if node.parent]
+        lines = [(pos.real, pos.imag, parentpos.real, parentpos.imag)
+                     for (pos, parentpos) in positions]
+        if lines:
+            dc.DrawLineList(lines)
 
         for node in self.nodes:
             self.DrawNode(node, dc)
