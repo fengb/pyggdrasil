@@ -1,5 +1,7 @@
 import wx
 import wx.lib.newevent
+import math
+import cmath
 import yaml
 
 import pyggdrasil
@@ -152,10 +154,25 @@ class Graph(wx.ScrolledWindow):
         self.DoPrepareDC(dc)
         dc.Clear()
 
-        positions = [(self.nodes[node], self.nodes[node.parent])
-                         for node in self.nodes if node.parent]
-        lines = [(pos.real, pos.imag, parentpos.real, parentpos.imag)
-                     for (pos, parentpos) in positions]
+        lines = []
+        for node in self.nodes:
+            if node.parent:
+                npos = self.nodes[node]
+                ppos = self.nodes[node.parent]
+                vector = ppos - npos
+                magnitude = abs(vector)
+                direction = math.atan2(vector.imag, vector.real)
+
+                # Relational line
+                ppos -= self.radius * cmath.exp(direction * 1j)
+                lines.append((npos.real, npos.imag, ppos.real, ppos.imag))
+
+                # Little arrow at the end
+                pos1 = ppos - self.padding * cmath.exp((direction + 0.5) * 1j)
+                pos2 = ppos - self.padding * cmath.exp((direction - 0.5) * 1j)
+                lines.append((pos1.real, pos1.imag, ppos.real, ppos.imag))
+                lines.append((pos2.real, pos2.imag, ppos.real, ppos.imag))
+
         if lines:
             dc.DrawLineList(lines)
 

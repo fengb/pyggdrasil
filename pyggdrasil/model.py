@@ -1,6 +1,3 @@
-import itertools
-
-
 class NodeParseException(Exception): pass
 
 
