@@ -299,12 +299,14 @@ class Tree(wx.Panel):
         #TODO: Deal with children somehow
         selectedid = self.tree.GetSelection()
 
-        self.nodes[selectedid].parent = None
-        del self.nodes[selectedid]
+        # Do not let root node get removed
+        if self.nodes[selectedid].parent:
+            self.nodes[selectedid].parent = None
+            del self.nodes[selectedid]
 
-        self.tree.Delete(selectedid)
+            self.tree.Delete(selectedid)
 
-        wx.PostEvent(self, TreeChangedEvent())
+            wx.PostEvent(self, TreeChangedEvent())
 
     def OnBeginDrag(self, event):
         self._dragitem = event.GetItem()
