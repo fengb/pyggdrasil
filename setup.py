@@ -1,3 +1,4 @@
+from distutils.core import setup
 
 
 args = dict(
@@ -7,11 +8,6 @@ args = dict(
     packages=['pyggdrasil', 'pyggdrasil.graph'],
     scripts=['pygg'],
 )
-
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
 
 
 try:
