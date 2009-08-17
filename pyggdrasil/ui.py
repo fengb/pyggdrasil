@@ -163,8 +163,11 @@ class Graph(wx.ScrolledWindow):
                 magnitude = abs(vector)
                 direction = math.atan2(vector.imag, vector.real)
 
-                # Relational line
+                # Adjust for the circles
                 ppos -= self.radius * cmath.exp(direction * 1j)
+                npos += self.radius * cmath.exp(direction * 1j)
+
+                # Relational line
                 lines.append((npos.real, npos.imag, ppos.real, ppos.imag))
 
                 # Little arrow at the end
