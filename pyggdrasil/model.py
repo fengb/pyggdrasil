@@ -1,3 +1,6 @@
+import operator
+
+
 class NodeParseException(Exception): pass
 
 
@@ -54,6 +57,9 @@ class Node(object):
         for iter in childreniters:
             for item in iter:
                 yield item
+
+    def sort(self):
+        self.children.sort(key=operator.attrgetter('id'))
 
     @classmethod
     def from_raw(cls, raw):

@@ -21,18 +21,18 @@ class Main(wx.Frame):
         menubar = wx.MenuBar()
 
         file = wx.Menu()
-        file.Append(wx.ID_NEW)
-        self.Bind(wx.EVT_MENU, self.OnNew, id=wx.ID_NEW)
-        file.Append(wx.ID_OPEN)
-        self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
+        new = file.Append(wx.ID_NEW)
+        self.Bind(wx.EVT_MENU, self.OnNew, new)
+        open = file.Append(wx.ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnOpen, open)
         file.AppendSeparator()
 
-        file.Append(wx.ID_CLOSE, 'Close\tCtrl-W')
-        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_CLOSE)
-        file.Append(wx.ID_SAVE)
-        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
-        file.Append(wx.ID_SAVEAS)
-        self.Bind(wx.EVT_MENU, self.OnSaveAs, id=wx.ID_SAVEAS)
+        close = file.Append(wx.ID_CLOSE, 'Close\tCtrl-W')
+        self.Bind(wx.EVT_MENU, self.OnClose, close)
+        save = file.Append(wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.OnSave, save)
+        saveas = file.Append(wx.ID_SAVEAS)
+        self.Bind(wx.EVT_MENU, self.OnSaveAs, saveas)
         file.AppendSeparator()
 
         file.Append(wx.ID_EXIT)
@@ -42,16 +42,16 @@ class Main(wx.Frame):
 
         box = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tree = Tree(self.root, self)
-        box.Add(self.tree, 0, wx.EXPAND)
+        self._tree = Tree(self.root, self)
+        box.Add(self._tree, 0, wx.EXPAND)
 
         self.graph = Graph(self.root, 40, 5, self)
         box.Add(self.graph, 1, wx.EXPAND)
 
         self.SetSizer(box)
 
-        self.tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
-        self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
+        self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
+        self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
         self.graph.Bind(GRAPH_SELECTED_EVENT, self.OnGraphSelected)
 
     def getfilename(self):
@@ -104,10 +104,10 @@ class Main(wx.Frame):
         self.graph.Refresh()
 
     def OnTreeSelected(self, event):
-        self.graph.selected = self.tree.selected
+        self.graph.selected = self._tree.selected
 
     def OnGraphSelected(self, event):
-        self.tree.selected = event.target
+        self._tree.selected = event.target
 
 
 class Graph(wx.ScrolledWindow):
@@ -223,91 +223,123 @@ class Tree(wx.Panel):
     def __init__(self, root, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
 
-        box = wx.BoxSizer(wx.VERTICAL)
+        sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.tree = wx.TreeCtrl(self, wx.ID_ANY,
+        self._tree = wx.TreeCtrl(self, wx.ID_ANY,
                                 style=(wx.TR_EDIT_LABELS | wx.TR_HAS_BUTTONS))
-        self.tree.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnRename)
-        self.tree.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
-        self.tree.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
-        box.Add(self.tree, 1, wx.EXPAND)
+        self._tree.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnRename)
+        self._tree.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
+        self._tree.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
+        sizer.Add(self._tree, 1, wx.EXPAND)
 
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        box.Add(hbox, 0, wx.EXPAND)
+        sizer.Add(self._buttoncontrols())
 
-        self.childinput = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
-        self.childinput.Bind(wx.EVT_TEXT_ENTER, self.OnAdd)
-        hbox.Add(self.childinput)
-
-        add = wx.Button(self, wx.ID_ADD, 'Add Child')
-        self.Bind(wx.EVT_BUTTON, self.OnAdd, id=wx.ID_ADD)
-        hbox.Add(add, 0)
-
-        hbox.AddStretchSpacer()
-
-        remove = wx.Button(self, wx.ID_REMOVE)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, id=wx.ID_REMOVE)
-        hbox.Add(remove)
-
-        self.SetSizer(box)
+        self.SetSizer(sizer)
 
         self.root = root
         self.Refresh()
 
+    def _buttoncontrols(self):
+        sizer = wx.FlexGridSizer(rows=0, cols=2)
+
+        self._childinput = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
+        self._childinput.Bind(wx.EVT_TEXT_ENTER, self.OnAdd)
+        sizer.Add(self._childinput, 1, wx.EXPAND)
+
+        add = wx.Button(self, wx.ID_ADD, 'Add Child')
+        add.Bind(wx.EVT_BUTTON, self.OnAdd)
+        sizer.Add(add, 1, wx.EXPAND)
+
+        sizer.AddStretchSpacer()
+
+        remove = wx.Button(self, wx.ID_REMOVE)
+        remove.Bind(wx.EVT_BUTTON, self.OnRemove)
+        sizer.Add(remove, 1, wx.EXPAND)
+
+        sort = wx.Button(self, wx.ID_ANY, 'Sort')
+        sort.Bind(wx.EVT_BUTTON, self.OnSort)
+        sizer.Add(sort, 1, wx.EXPAND)
+
+        self._autosort = wx.CheckBox(self, wx.ID_ANY, 'Auto Sort')
+        self._autosort.Bind(wx.EVT_CHECKBOX, self.OnSort)
+        sizer.Add(self._autosort)
+
+        return sizer
+
     def getselected(self):
-        return self.nodes[self.tree.GetSelection()]
+        return self.nodes[self._tree.GetSelection()]
     def setselected(self, value):
-        treeid = self.nodes.getkey(value)
-        self.tree.SelectItem(treeid)
+        item = self.nodes.getkey(value)
+        self._tree.SelectItem(item)
     selected = property(getselected, setselected)
 
+    @property
+    def autosort(self):
+        return self._autosort.IsChecked()
+
     def Refresh(self):
-        self.tree.DeleteAllItems()
+        self._tree.DeleteAllItems()
         self.nodes = pyggdrasil.model.EqualsDict()
         self._PopulateTreeItem(self.root, None)
 
     def _PopulateTreeItem(self, node, parent):
         if parent:
-            treeitem = self.tree.AppendItem(parent, node.id)
+            treeitem = self._tree.AppendItem(parent, node.id)
         else:
-            treeitem = self.tree.AddRoot(node.id)
+            treeitem = self._tree.AddRoot(node.id)
         self.nodes[treeitem] = node
 
         for child in node.children:
             self._PopulateTreeItem(child, treeitem)
 
+    def _SortItem(self, item):
+        self._tree.SortChildren(item)
+        self.nodes[item].sort()
+
+        # I want an iterator
+        child = self._tree.GetFirstChild(item)[0]
+        while child.IsOk():
+            self._SortItem(child)
+            child = self._tree.GetNextSibling(child)
+
+    def OnSort(self, event):
+        self._SortItem(self._tree.GetRootItem())
+        wx.PostEvent(self, TreeChangedEvent())
+
     def OnRename(self, event):
-        selectedid = self.tree.GetSelection()
+        selectedid = self._tree.GetSelection()
         nodeid = event.GetLabel()
         self.nodes[selectedid].id = str(nodeid)
 
         wx.PostEvent(self, TreeChangedEvent())
 
     def OnAdd(self, event):
-        selectedid = self.tree.GetSelection()
-        nodeid = self.childinput.GetValue()
+        selectedid = self._tree.GetSelection()
+        nodeid = self._childinput.GetValue()
 
         if nodeid:
             node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[selectedid])
 
-            newid = self.tree.AppendItem(selectedid, nodeid)
+            newid = self._tree.AppendItem(selectedid, nodeid)
             self.nodes[newid] = node
-            self.tree.Expand(selectedid)
+            self._tree.Expand(selectedid)
 
-            self.childinput.Clear()
+            self._childinput.Clear()
 
+            if self.autosort:
+                self._SortItem(selectedid)
             wx.PostEvent(self, TreeChangedEvent())
 
     def OnRemove(self, event):
         #TODO: Deal with children somehow
-        selectedid = self.tree.GetSelection()
+        selectedid = self._tree.GetSelection()
 
         # Do not let root node get removed
         if self.nodes[selectedid].parent:
             self.nodes[selectedid].parent = None
             del self.nodes[selectedid]
 
-            self.tree.Delete(selectedid)
+            self._tree.Delete(selectedid)
 
             wx.PostEvent(self, TreeChangedEvent())
 
@@ -321,20 +353,20 @@ class Tree(wx.Panel):
 
         if not parent.IsOk():
             return
-        if parent == self.tree.GetItemParent(self._dragitem):
+        if parent == self._tree.GetItemParent(self._dragitem):
             return
         try:
             oldid = self._dragitem
         except AttributeError:
             return
 
-        text = self.tree.GetItemText(oldid)
-        self.tree.Delete(oldid)
+        text = self._tree.GetItemText(oldid)
+        self._tree.Delete(oldid)
 
         node = self.nodes.pop(oldid)
         node.parent = self.nodes[parent]
         self._PopulateTreeItem(node, parent)
-        self.tree.Expand(parent)
+        self._tree.Expand(parent)
 
         wx.PostEvent(self, TreeChangedEvent())
 
