@@ -101,7 +101,7 @@ class Main(wx.Frame):
         self.Close()
 
     def OnTreeChange(self, event):
-        self.graph.Refresh()
+        self.graph.Reload()
 
     def OnTreeSelected(self, event):
         self.graph.selected = self._tree.selected
@@ -118,26 +118,19 @@ class Graph(wx.ScrolledWindow):
         self.padding = padding
         self._selected = None
 
-
         self.root = root
-        self.Refresh()
+        self.Reload()
         self.Bind(wx.EVT_PAINT, self.Redraw)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnMouseClick)
 
     def getselected(self):
         return self._selected
     def setselected(self, value):
-        if self._selected:
-            # Restore previous selected
-            self.DrawNode(self._selected)
-
         self._selected = value
-
-        if self._selected:
-            self.DrawNode(self._selected, bgcolor='#FFFF80')
+        self.Refresh(eraseBackground=True)
     selected = property(getselected, setselected)
 
-    def Refresh(self):
+    def Reload(self):
         self.selected = None
         graph = pyggdrasil.graph.generate(self.root)
 
@@ -151,8 +144,8 @@ class Graph(wx.ScrolledWindow):
 
     def Redraw(self, event=None):
         dc = wx.PaintDC(self)
-        self.DoPrepareDC(dc)
-        dc.Clear()
+        self.PrepareDC(dc)
+        dc.BeginDrawing()
 
         lines = []
         for node in self.nodes:
@@ -183,18 +176,11 @@ class Graph(wx.ScrolledWindow):
             self.DrawNode(node, dc)
 
         if self.selected:
-            self.DrawNode(self.selected, dc=dc, bgcolor='#FFFF80')
+            self.DrawNode(self.selected, dc, bgcolor='#FFFF80')
 
         dc.EndDrawing()
 
-    def DrawNode(self, node, dc=None, bgcolor=None):
-        if dc == None:
-            dc = wx.ClientDC(self)
-            self.DoPrepareDC(dc)
-            enddrawing = True
-        else:
-            enddrawing = False
-
+    def DrawNode(self, node, dc, bgcolor=None):
         if bgcolor:
             dc.SetBrush(wx.Brush(bgcolor))
 
@@ -204,11 +190,8 @@ class Graph(wx.ScrolledWindow):
         w, h = dc.GetTextExtent(node.id)
         dc.DrawText(node.id, pos.real - w/2.0, pos.imag - h/2.0)
 
-        if enddrawing:
-            dc.EndDrawing()
-
     def OnMouseClick(self, event):
-        dc = wx.ClientDC(self)
+        dc = wx.PaintDC(self)
         self.DoPrepareDC(dc)
         click = tuple(event.GetLogicalPosition(dc))
 
@@ -237,10 +220,10 @@ class Tree(wx.Panel):
         self.SetSizer(sizer)
 
         self.root = root
-        self.Refresh()
+        self.Reload()
 
     def _buttoncontrols(self):
-        sizer = wx.FlexGridSizer(rows=0, cols=2)
+        sizer = wx.GridSizer(rows=0, cols=2)
 
         self._childinput = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
         self._childinput.Bind(wx.EVT_TEXT_ENTER, self.OnAdd)
@@ -255,6 +238,9 @@ class Tree(wx.Panel):
         remove = wx.Button(self, wx.ID_REMOVE)
         remove.Bind(wx.EVT_BUTTON, self.OnRemove)
         sizer.Add(remove, 1, wx.EXPAND)
+
+        sizer.AddStretchSpacer()
+        sizer.AddStretchSpacer()
 
         sort = wx.Button(self, wx.ID_ANY, 'Sort')
         sort.Bind(wx.EVT_BUTTON, self.OnSort)
@@ -277,7 +263,7 @@ class Tree(wx.Panel):
     def autosort(self):
         return self._autosort.IsChecked()
 
-    def Refresh(self):
+    def Reload(self):
         self._tree.DeleteAllItems()
         self.nodes = pyggdrasil.model.EqualsDict()
         self._PopulateTreeItem(self.root, None)
