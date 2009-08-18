@@ -307,39 +307,39 @@ class Tree(wx.Panel):
         wx.PostEvent(self, TreeChangedEvent())
 
     def OnRename(self, event):
-        selectedid = self._tree.GetSelection()
+        item = self._tree.GetSelection()
         nodeid = event.GetLabel()
-        self.nodes[selectedid].id = str(nodeid)
+        self.nodes[item].id = str(nodeid)
 
         wx.PostEvent(self, TreeChangedEvent())
 
     def OnAdd(self, event):
-        selectedid = self._tree.GetSelection()
+        item = self._tree.GetSelection()
         nodeid = self._childinput.GetValue()
 
         if nodeid:
-            node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[selectedid])
+            node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[item])
 
-            newid = self._tree.AppendItem(selectedid, nodeid)
-            self.nodes[newid] = node
-            self._tree.Expand(selectedid)
+            newitem = self._tree.AppendItem(item, nodeid)
+            self.nodes[newitem] = node
+            self._tree.Expand(item)
 
             self._childinput.Clear()
 
             if self.autosort:
-                self._SortItem(selectedid)
+                self._SortItem(item)
             wx.PostEvent(self, TreeChangedEvent())
 
     def OnRemove(self, event):
         #TODO: Deal with children somehow
-        selectedid = self._tree.GetSelection()
+        item = self._tree.GetSelection()
 
         # Do not let root node get removed
-        if self.nodes[selectedid].parent:
-            self.nodes[selectedid].parent = None
-            del self.nodes[selectedid]
+        if self.nodes[item].parent:
+            self.nodes[item].parent = None
+            del self.nodes[item]
 
-            self._tree.Delete(selectedid)
+            self._tree.Delete(item)
 
             wx.PostEvent(self, TreeChangedEvent())
 
