@@ -3,7 +3,7 @@ from distutils.core import setup
 
 args = dict(
     name='Pyggdrasil',
-    version='0.0.0',
+    version='0.0.1',
     description='Pyggdrasil',
     packages=['pyggdrasil', 'pyggdrasil.graph'],
     scripts=['pygg'],
