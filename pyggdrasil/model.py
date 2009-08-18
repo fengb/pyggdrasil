@@ -4,6 +4,10 @@ import operator
 class NodeParseException(Exception): pass
 
 
+def chain(func1, func2):
+    return lambda x: func1(func2(x))
+
+
 class Node(object):
     """A single node of a tree. The tree is bidirectional: having a reference to
     both the parent and the children.
@@ -58,8 +62,12 @@ class Node(object):
             for item in iter:
                 yield item
 
-    def sort(self):
-        self.children.sort(key=operator.attrgetter('id'))
+    def sort(self, key=None):
+        if key:
+            print 'chain'
+            self.children.sort(key=chain(key, operator.attrgetter('id')))
+        else:
+            self.children.sort(key=operator.attrgetter('id'))
 
     @classmethod
     def from_raw(cls, raw):
