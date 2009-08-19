@@ -191,7 +191,7 @@ class Graph(wx.ScrolledWindow):
         dc.DrawText(node.id, pos.real - w/2.0, pos.imag - h/2.0)
 
     def OnMouseClick(self, event):
-        dc = wx.PaintDC(self)
+        dc = wx.ClientDC(self)
         self.DoPrepareDC(dc)
         click = tuple(event.GetLogicalPosition(dc))
 
@@ -340,6 +340,8 @@ class Tree(wx.Panel):
         if not parent.IsOk():
             return
         if parent == self._tree.GetItemParent(self._dragitem):
+            return
+        if parent == self._dragitem:
             return
         try:
             oldid = self._dragitem
