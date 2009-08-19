@@ -341,6 +341,8 @@ class Tree(wx.Panel):
             return
         if parent == self._tree.GetItemParent(self._dragitem):
             return
+        if parent == self._dragitem:
+            return
         try:
             oldid = self._dragitem
         except AttributeError:
