@@ -1,6 +1,5 @@
 import wx
 import wx.lib.newevent
-import math
 import cmath
 import yaml
 
@@ -132,14 +131,11 @@ class Graph(wx.ScrolledWindow):
 
     def Reload(self):
         self.selected = None
-        graph = pyggdrasil.graph.generate(self.root)
-
-        scalar = 2 * (self.radius + self.padding)
-        self.nodes = dict((node, pos * scalar)
-                                     for (node, pos) in graph)
+        self.graph = pyggdrasil.graph.generate(self.root, radius=self.radius,
+                                               padding=self.padding)
 
         pos = self.GetViewStart()
-        self.SetScrollbars(1, 1, graph.width * scalar, graph.height * scalar)
+        self.SetScrollbars(1, 1, self.graph.width, self.graph.height)
         self.Scroll(*pos)
 
     def Redraw(self, event=None):
@@ -148,31 +144,25 @@ class Graph(wx.ScrolledWindow):
         dc.BeginDrawing()
 
         lines = []
-        for node in self.nodes:
-            if node.parent:
-                npos = self.nodes[node]
-                ppos = self.nodes[node.parent]
-                vector = ppos - npos
-                magnitude = abs(vector)
-                direction = math.atan2(vector.imag, vector.real)
-
-                # Adjust for the circles
-                ppos -= self.radius * cmath.exp(direction * 1j)
-                npos += self.radius * cmath.exp(direction * 1j)
+        for node in self.graph:
+            if self.graph.hasline(node):
+                spos = self.graph.linestart(node)
+                epos = self.graph.lineend(node)
+                direction = self.graph.linedir(node)
 
                 # Relational line
-                lines.append((npos.real, npos.imag, ppos.real, ppos.imag))
+                lines.append((spos.real, spos.imag, epos.real, epos.imag))
 
                 # Little arrow at the end
-                pos1 = ppos - self.padding * cmath.exp((direction + 0.5) * 1j)
-                pos2 = ppos - self.padding * cmath.exp((direction - 0.5) * 1j)
-                lines.append((pos1.real, pos1.imag, ppos.real, ppos.imag))
-                lines.append((pos2.real, pos2.imag, ppos.real, ppos.imag))
+                pos1 = epos - self.padding * cmath.exp((direction + 0.5) * 1j)
+                pos2 = epos - self.padding * cmath.exp((direction - 0.5) * 1j)
+                lines.append((pos1.real, pos1.imag, epos.real, epos.imag))
+                lines.append((pos2.real, pos2.imag, epos.real, epos.imag))
 
         if lines:
             dc.DrawLineList(lines)
 
-        for node in self.nodes:
+        for node in self.graph:
             self.DrawNode(node, dc)
 
         if self.selected:
@@ -184,7 +174,7 @@ class Graph(wx.ScrolledWindow):
         if bgcolor:
             dc.SetBrush(wx.Brush(bgcolor))
 
-        pos = self.nodes[node]
+        pos = self.graph.pos(node)
         dc.DrawCircle(pos.real, pos.imag, self.radius)
 
         w, h = dc.GetTextExtent(node.id)
@@ -195,7 +185,8 @@ class Graph(wx.ScrolledWindow):
         self.DoPrepareDC(dc)
         click = tuple(event.GetLogicalPosition(dc))
 
-        for (node, pos) in self.nodes.items():
+        for node in self.graph:
+            pos = self.graph.pos(node)
             if (pos.real - self.radius) <= click[0] <= (pos.real + self.radius) and \
                (pos.imag - self.radius) <= click[1] <= (pos.imag + self.radius):
                 wx.PostEvent(self, GraphSelectedEvent(target=node))
