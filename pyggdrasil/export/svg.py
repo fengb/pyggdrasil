@@ -12,6 +12,19 @@ def export(graph):
         'width': str(graph.width), 'height': str(graph.height),
     })
 
+    defs = et.SubElement(root, 'defs')
+    arrow = et.SubElement(defs, 'marker', {
+        'id': 'arrowhead', 
+        'viewBox': '0 0 10 10',
+        'refX': '10', 'refY': '5',
+        'markerUnits': 'strokeWidth',
+        'markerWidth': '5', 'markerHeight': '4',
+        'orient': 'auto',
+    })
+    et.SubElement(arrow, 'polygon', {
+        'points': '0,0 10,5 0,10 1,5', 'fill': 'black', 'stroke': 'black',
+    })
+
     for node in graph:
         if graph.hasline(node):
             spos = graph.linestart(node)
@@ -21,7 +34,6 @@ def export(graph):
                 'x2': str(epos.real), 'y2': str(epos.imag),
                 'stroke': 'black',
                 'marker-end': 'url(#%s)' % arrow.get('id'),
-                'marker-start': 'url(#%s)' % arrow.get('id'),
             })
 
     for node in graph:
@@ -35,7 +47,7 @@ def export(graph):
         })
         text = et.SubElement(group, 'text', {
             'x': str(pos.real), 'y': str(pos.imag),
-            'text-anchor': 'middle', 'alignment-baseline': 'middle',
+            'text-anchor': 'middle', 'alignment-baseline': 'mathematical',
         })
         text.text = node.id
 
