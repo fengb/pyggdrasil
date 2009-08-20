@@ -32,6 +32,8 @@ class Main(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnSave, save)
         saveas = file.Append(wx.ID_SAVEAS)
         self.Bind(wx.EVT_MENU, self.OnSaveAs, saveas)
+        export = file.Append(wx.ID_ANY, 'Export...')
+        self.Bind(wx.EVT_MENU, self.OnExport, export)
         file.AppendSeparator()
 
         file.Append(wx.ID_EXIT)
@@ -95,6 +97,18 @@ class Main(wx.Frame):
             yaml.dump(self.root.raw(), file)
         finally:
             file.close()
+
+    def OnExport(self, event):
+        # TODO: Remove hardcoded reference to SVG
+        filename = wx.SaveFileSelector('SVG', extension='svg', parent=self)
+        if filename:
+            if '.' not in filename:
+                filename += '.svg'
+            file = open(filename, 'w')
+            try:
+                file.write(pyggdrasil.export.svg.export(self.graph.graph))
+            finally:
+                file.close()
 
     def OnClose(self, event):
         self.Close()
