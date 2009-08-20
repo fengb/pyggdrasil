@@ -1,11 +1,11 @@
 def generate(root):
-    return Graph(root)
+    return RawGraph(root)
 
 
-class Graph(object):
+class RawGraph(object):
     def __init__(self, node):
         self.node = node
-        self.children = [Graph(child) for child in node.children]
+        self.children = [RawGraph(child) for child in node.children]
 
         self._width = None
 

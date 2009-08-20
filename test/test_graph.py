@@ -2,7 +2,7 @@ import random
 from pyggdrasil import graph
 
 
-class TestNormalizedGraph(object):
+class TestGraph(object):
     def setup_method(self, method):
         self.xmin = -28.0
         self.ymin = -925.0
@@ -13,13 +13,14 @@ class TestNormalizedGraph(object):
             ('peak', complex(self.xmax, self.ymax)),
         ]
 
-        self.graph = graph.NormalizedGraph(self.original)
+        self.graph = graph.Graph(self.original)
 
     def test_dimensions(self):
         assert self.graph.width == self.xmax - self.xmin + 1
         assert self.graph.height == self.ymax - self.ymin + 1
 
     def test_positions(self):
-        for (node, pos) in self.graph:
+        for node in self.graph:
+            pos = self.graph.pos(node)
             assert 0.5 <= pos.real <= self.graph.width - 0.5
             assert 0.5 <= pos.imag <= self.graph.height - 0.5
