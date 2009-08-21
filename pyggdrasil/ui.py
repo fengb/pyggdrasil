@@ -345,29 +345,30 @@ class Tree(wx.Panel):
             event.Allow()
 
     def OnEndDrag(self, event):
-        parent = event.GetItem()
+        parentitem = event.GetItem()
+        olditem = self._dragitem
 
-        if not parent.IsOk():
+        if not parentitem.IsOk():
             return
-        if parent == self._tree.GetItemParent(self._dragitem):
-            return
-        if parent == self._dragitem:
-            return
-        try:
-            oldid = self._dragitem
-        except AttributeError:
+        if parentitem == olditem:
             return
 
-        text = self._tree.GetItemText(oldid)
-        self._tree.Delete(oldid)
+        node = self.nodes[olditem]
+        parentnode = self.nodes[parentitem]
 
-        node = self.nodes.pop(oldid)
-        node.parent = self.nodes[parent]
-        self._PopulateTreeItem(node, parent)
-        self._tree.Expand(parent)
+        if parentnode.hasancestor(node):
+            # Circular reference attempt
+            # TODO: Display an error message
+            return
+
+        self._tree.Delete(olditem)
+        del self.nodes[olditem]
+
+        node.parent = parentnode
+        self._PopulateTreeItem(node, parentitem)
+        self._tree.Expand(parentitem)
 
         wx.PostEvent(self, TreeChangedEvent())
-
 
 class App(wx.App):
     def OnInit(self):
