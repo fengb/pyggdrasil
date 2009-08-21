@@ -335,7 +335,6 @@ class Tree(wx.Panel):
 
         self.nodes[item].parent = None
         del self.nodes[item]
-
         self._tree.Delete(item)
 
         wx.PostEvent(self, TreeChangedEvent())

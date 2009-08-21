@@ -64,10 +64,17 @@ class Node(object):
 
     def sort(self, key=None):
         if key:
-            print 'chain'
             self.children.sort(key=chain(key, operator.attrgetter('id')))
         else:
             self.children.sort(key=operator.attrgetter('id'))
+
+    def hasancestor(self, node):
+        if not self.parent:
+            return False
+        if node == self.parent:
+            return True
+
+        return self.parent.hasancestor(node)
 
     @classmethod
     def from_raw(cls, raw):

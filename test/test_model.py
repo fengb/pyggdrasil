@@ -1,6 +1,13 @@
 from pyggdrasil import model
 
 
+def assert_equal_nodes(node1, node2):
+    assert node1.id == node2.id
+    assert node1.data == node2.data
+    for (child1, child2) in zip(node1.children, node2.children):
+        assert_equal_nodes(child1, child2)
+
+
 class TestNode(object):
     def setup_method(self, method):
         self.root = model.Node('the root', 'test data')
@@ -23,7 +30,7 @@ class TestNode(object):
         raw = self.root.raw()
         generated = model.Node.from_raw(raw)
 
-        self.assert_equal(generated, self.root)
+        assert_equal_nodes(generated, self.root)
 
     def test_unroll_in_order_of_node_then_children_then_descendents(self):
         # TODO: Less hardcode, more awesome code
@@ -35,9 +42,8 @@ class TestNode(object):
         assert nodes[3] == self.grandchild1
         assert len(nodes) == 4
 
-    def assert_equal(self, node1, node2):
-        assert node1.id == node2.id
-        assert node1.data == node2.data
-        for (child1, child2) in zip(node1.children, node2.children):
-            self.assert_equal(child1, child2)
+    def test_hasancestor(self):
+        assert self.grandchild1.hasancestor(self.child1)
+        assert self.grandchild1.hasancestor(self.root)
+        assert not self.grandchild1.hasancestor(self.child2)
 
