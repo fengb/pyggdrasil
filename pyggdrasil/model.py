@@ -2,6 +2,7 @@ import operator
 
 
 class NodeParseException(Exception): pass
+class CircularTreeException(Exception): pass
 
 
 def chain(func1, func2):
@@ -24,16 +25,18 @@ class Node(object):
         self.children = []
         self.parent = parent
 
-    def get_parent(self):
+    def getparent(self):
         return self._parent
 
-    def set_parent(self, value):
+    def setparent(self, value):
+        if value and value.hasancestor(self):
+            raise CircularTreeException
         if self.parent:
             self.parent.children.remove(self)
         if value:
             value.children.append(self)
         self._parent = value
-    parent = property(get_parent, set_parent)
+    parent = property(getparent, setparent)
 
     def raw(self):
         return {

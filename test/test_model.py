@@ -1,3 +1,4 @@
+import py
 from pyggdrasil import model
 
 
@@ -46,4 +47,8 @@ class TestNode(object):
         assert self.grandchild1.hasancestor(self.child1)
         assert self.grandchild1.hasancestor(self.root)
         assert not self.grandchild1.hasancestor(self.child2)
+
+    def test_reject_circular_tree(self):
+        py.test.raises(model.CircularTreeException,
+                       'self.root.parent = self.grandchild1')
 

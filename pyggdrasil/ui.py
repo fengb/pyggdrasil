@@ -352,23 +352,21 @@ class Tree(wx.Panel):
             return
         if parentitem == olditem:
             return
-
-        node = self.nodes[olditem]
-        parentnode = self.nodes[parentitem]
-
-        if parentnode.hasancestor(node):
-            # Circular reference attempt
-            # TODO: Display an error message
+        if parentitem == self._tree.GetItemParent(olditem):
             return
 
-        self._tree.Delete(olditem)
-        del self.nodes[olditem]
+        try:
+            node = self.nodes[olditem]
+            node.parent = self.nodes[parentitem]
+        except pyggdrasil.model.CircularTreeException:
+            pass
+        else:
+            del self.nodes[olditem]
+            self._tree.Delete(olditem)
+            self._PopulateTreeItem(node, parentitem)
+            self._tree.Expand(parentitem)
 
-        node.parent = parentnode
-        self._PopulateTreeItem(node, parentitem)
-        self._tree.Expand(parentitem)
-
-        wx.PostEvent(self, TreeChangedEvent())
+            wx.PostEvent(self, TreeChangedEvent())
 
 class App(wx.App):
     def OnInit(self):
