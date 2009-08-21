@@ -36,7 +36,7 @@ class Graph(object):
         padding
         normalize
     """
-    def __init__(self, rawgraph, normalize=True, radius=1.0, padding=0.0):
+    def __init__(self, rawgraph, normalize=True, radius=0.5, padding=0.0):
         self.normalize = normalize
         self.radius = radius
         self.padding = padding
