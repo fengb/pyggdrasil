@@ -298,8 +298,12 @@ class Tree(wx.Panel):
         wx.PostEvent(self, TreeChangedEvent())
 
     def OnRename(self, event):
-        item = self._tree.GetSelection()
         nodeid = event.GetLabel()
+        if not nodeid:
+            event.Veto()
+            return
+
+        item = self._tree.GetSelection()
         self.nodes[item].id = str(nodeid)
 
         wx.PostEvent(self, TreeChangedEvent())
