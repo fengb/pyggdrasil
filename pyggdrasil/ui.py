@@ -144,9 +144,10 @@ class Graph(wx.ScrolledWindow):
     selected = property(getselected, setselected)
 
     def Reload(self):
-        self.selected = None
         self.graph = pyggdrasil.graph.generate(self.root, radius=self.radius,
                                                padding=self.padding)
+        if self.selected not in self.graph:
+            self.selected = None
 
         pos = self.GetViewStart()
         self.SetScrollbars(1, 1, self.graph.width, self.graph.height)
