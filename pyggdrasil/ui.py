@@ -330,13 +330,15 @@ class Tree(wx.Panel):
         item = self._tree.GetSelection()
 
         # Do not let root node get removed
-        if self.nodes[item].parent:
-            self.nodes[item].parent = None
-            del self.nodes[item]
+        if not self.nodes[item].parent:
+            return
 
-            self._tree.Delete(item)
+        self.nodes[item].parent = None
+        del self.nodes[item]
 
-            wx.PostEvent(self, TreeChangedEvent())
+        self._tree.Delete(item)
+
+        wx.PostEvent(self, TreeChangedEvent())
 
     def OnBeginDrag(self, event):
         self._dragitem = event.GetItem()
