@@ -215,7 +215,7 @@ class Tree(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         self._tree = wx.TreeCtrl(self, wx.ID_ANY,
-                                style=(wx.TR_EDIT_LABELS | wx.TR_HAS_BUTTONS))
+                                 style=(wx.TR_EDIT_LABELS | wx.TR_DEFAULT_STYLE))
         self._tree.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnRename)
         self._tree.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
         self._tree.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
