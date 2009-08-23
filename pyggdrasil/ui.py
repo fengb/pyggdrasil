@@ -1,7 +1,6 @@
 import wx
 import wx.lib.newevent
 import cmath
-import yaml
 
 import pyggdrasil
 
@@ -11,10 +10,12 @@ GraphSelectedEvent, GRAPH_SELECTED_EVENT = wx.lib.newevent.NewEvent()
 
 
 class Main(wx.Frame):
-    def __init__(self, root=None, filename=None, *args, **kwargs):
+    def __init__(self, root=None, graphoptions=None, filename=None, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
 
+
         self.root = root or pyggdrasil.model.Node('root', None)
+        self.graphoptions = graphoptions or {'radius': 40, 'padding': 5}
         self.filename = filename
 
         menubar = wx.MenuBar()
@@ -46,7 +47,7 @@ class Main(wx.Frame):
         self._tree = Tree(self.root, self)
         box.Add(self._tree, 0, wx.EXPAND)
 
-        self.graph = Graph(self.root, 40, 5, self)
+        self.graph = Graph(self.root, parent=self, **self.graphoptions)
         box.Add(self.graph, 1, wx.EXPAND)
 
         self.SetSizer(box)
@@ -71,8 +72,9 @@ class Main(wx.Frame):
         if filename:
             file = open(filename)
             try:
-                root = pyggdrasil.model.Node.from_raw(yaml.load(file))
-                frame = Main(root, filename, self.GetParent(), wx.ID_ANY)
+                root, graphoptions = pyggdrasil.serialize.load(file)
+                frame = Main(root, graphoptions, filename,
+                             self.GetParent(), wx.ID_ANY)
                 frame.Show(True)
             finally:
                 file.close()
@@ -94,6 +96,7 @@ class Main(wx.Frame):
     def _Save(self):
         file = open(self.filename, 'w')
         try:
+            pyggdrasil.serialize.dump(file, self.root, self.graphoptions)
             yaml.dump(self.root.raw(), file)
         finally:
             file.close()
@@ -372,7 +375,6 @@ class Tree(wx.Panel):
 class App(wx.App):
     def OnInit(self):
         self.SetAppName('Pyggdrasil')
-        root = pyggdrasil.model.Node('root', None)
         frame = Main(parent=None, id=wx.ID_ANY)
         frame.Bind(wx.EVT_MENU, self.OnMenuExit, id=wx.ID_EXIT)
         frame.Show(True)
