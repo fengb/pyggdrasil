@@ -171,8 +171,8 @@ class Graph(wx.ScrolledWindow):
                 lines.append((spos.real, spos.imag, epos.real, epos.imag))
 
                 # Little arrow at the end
-                pos1 = epos - self.padding * cmath.exp((direction + 0.5) * 1j)
-                pos2 = epos - self.padding * cmath.exp((direction - 0.5) * 1j)
+                pos1 = epos - self.graph.arrowlength * cmath.exp((direction + self.graph.arrowwidth / 2.0) * 1j)
+                pos2 = epos - self.graph.arrowlength * cmath.exp((direction - self.graph.arrowwidth / 2.0) * 1j)
                 lines.append((pos1.real, pos1.imag, epos.real, epos.imag))
                 lines.append((pos2.real, pos2.imag, epos.real, epos.imag))
 
