@@ -1,3 +1,6 @@
+import cmath
+
+
 try:
     # 2.5 built-in
     import xml.etree.ElementTree as et
@@ -13,16 +16,19 @@ def export(graph):
     })
 
     defs = et.SubElement(root, 'defs')
+    arrowwidth, arrowheight = _arrowdimensions(graph)
+    # X and Y are reversed
     arrow = et.SubElement(defs, 'marker', {
         'id': 'arrowhead', 
-        'viewBox': '0 0 10 10',
-        'refX': '10', 'refY': '5',
+        'viewBox': '0 0 %s %s' % (arrowheight, arrowwidth),
+        'refX': str(arrowheight), 'refY': str(arrowwidth / 2.0),
         'markerUnits': 'strokeWidth',
-        'markerWidth': '5', 'markerHeight': '4',
+        'markerWidth': str(arrowheight), 'markerHeight': str(arrowwidth),
         'orient': 'auto',
     })
     et.SubElement(arrow, 'polygon', {
-        'points': '0,0 10,5 0,10 1,5', 'fill': 'black', 'stroke': 'black',
+        'points': '0,0 %s,%s 0,%s' % (arrowheight, arrowwidth / 2.0, arrowwidth),
+        'fill': 'black', 'stroke': 'black',
     })
 
     for node in graph:
@@ -52,3 +58,8 @@ def export(graph):
         text.text = node.id
 
     return et.tostring(root)
+
+
+def _arrowdimensions(graph):
+    vector = graph.arrowlength * cmath.exp((cmath.pi / 2.0 - graph.arrowwidth / 2.0) * 1j)
+    return 2.0 * vector.real, vector.imag
