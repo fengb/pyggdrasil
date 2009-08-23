@@ -161,6 +161,7 @@ class Graph(wx.ScrolledWindow):
         dc.BeginDrawing()
 
         lines = []
+        polygons = []
         for node in self.graph:
             if self.graph.hasline(node):
                 spos = self.graph.linestart(node)
@@ -173,24 +174,25 @@ class Graph(wx.ScrolledWindow):
                 # Little arrow at the end
                 pos1 = epos - self.graph.arrowlength * cmath.exp((direction + self.graph.arrowwidth / 2.0) * 1j)
                 pos2 = epos - self.graph.arrowlength * cmath.exp((direction - self.graph.arrowwidth / 2.0) * 1j)
-                lines.append((pos1.real, pos1.imag, epos.real, epos.imag))
-                lines.append((pos2.real, pos2.imag, epos.real, epos.imag))
+                polygons.append([(epos.real, epos.imag),
+                                 (pos1.real, pos1.imag), (pos2.real, pos2.imag)])
 
         if lines:
             dc.DrawLineList(lines)
+            dc.SetBrush(wx.Brush('#000000'))
+            dc.DrawPolygonList(polygons)
 
+        dc.SetBrush(wx.Brush('#FFFFFF'))
         for node in self.graph:
             self.DrawNode(node, dc)
 
         if self.selected:
-            self.DrawNode(self.selected, dc, bgcolor='#FFFF80')
+            dc.SetBrush(wx.Brush('#FFFF80'))
+            self.DrawNode(self.selected, dc)
 
         dc.EndDrawing()
 
-    def DrawNode(self, node, dc, bgcolor=None):
-        if bgcolor:
-            dc.SetBrush(wx.Brush(bgcolor))
-
+    def DrawNode(self, node, dc):
         pos = self.graph.pos(node)
         dc.DrawCircle(pos.real, pos.imag, self.graph.radius)
 
