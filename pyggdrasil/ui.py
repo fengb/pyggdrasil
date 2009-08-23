@@ -13,9 +13,10 @@ class Main(wx.Frame):
     def __init__(self, root=None, graphoptions=None, filename=None, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
 
+        if not graphoptions:
+            graphoptions = {'radius': 40, 'padding': 5}
 
         self.root = root or pyggdrasil.model.Node('root', None)
-        self.graphoptions = graphoptions or {'radius': 40, 'padding': 5}
         self.filename = filename
 
         menubar = wx.MenuBar()
@@ -47,7 +48,7 @@ class Main(wx.Frame):
         self._tree = Tree(self.root, self)
         box.Add(self._tree, 0, wx.EXPAND)
 
-        self.graph = Graph(self.root, parent=self, **self.graphoptions)
+        self.graph = Graph(self.root, graphoptions, parent=self)
         box.Add(self.graph, 1, wx.EXPAND)
 
         self.SetSizer(box)
@@ -127,11 +128,10 @@ class Main(wx.Frame):
 
 
 class Graph(wx.ScrolledWindow):
-    def __init__(self, root, radius, padding, *args, **kwargs):
+    def __init__(self, root, graphoptions, *args, **kwargs):
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
 
-        self.radius = radius
-        self.padding = padding
+        self.graphoptions = graphoptions
         self._selected = None
 
         self.root = root
@@ -147,8 +147,7 @@ class Graph(wx.ScrolledWindow):
     selected = property(getselected, setselected)
 
     def Reload(self):
-        self.graph = pyggdrasil.graph.generate(self.root, radius=self.radius,
-                                               padding=self.padding)
+        self.graph = pyggdrasil.graph.generate(self.root, **self.graphoptions)
         if self.selected not in self.graph:
             self.selected = None
 
@@ -193,7 +192,7 @@ class Graph(wx.ScrolledWindow):
             dc.SetBrush(wx.Brush(bgcolor))
 
         pos = self.graph.pos(node)
-        dc.DrawCircle(pos.real, pos.imag, self.radius)
+        dc.DrawCircle(pos.real, pos.imag, self.graph.radius)
 
         w, h = dc.GetTextExtent(node.id)
         dc.DrawText(node.id, pos.real - w/2.0, pos.imag - h/2.0)
@@ -205,8 +204,8 @@ class Graph(wx.ScrolledWindow):
 
         for node in self.graph:
             pos = self.graph.pos(node)
-            if (pos.real - self.radius) <= click[0] <= (pos.real + self.radius) and \
-               (pos.imag - self.radius) <= click[1] <= (pos.imag + self.radius):
+            if (pos.real - self.graph.radius) <= click[0] <= (pos.real + self.graph.radius) and \
+               (pos.imag - self.graph.radius) <= click[1] <= (pos.imag + self.graph.radius):
                 wx.PostEvent(self, GraphSelectedEvent(target=node))
                 return
 
