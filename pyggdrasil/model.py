@@ -1,7 +1,6 @@
 import operator
 
 
-class NodeParseException(Exception): pass
 class CircularTreeException(Exception): pass
 
 
@@ -38,15 +37,6 @@ class Node(object):
         self._parent = value
     parent = property(getparent, setparent)
 
-    def raw(self):
-        return {
-            'data': dict((node.id, node.data) for node in self.unroll()),
-            'structure': self._raw_structure(),
-        }
-
-    def _raw_structure(self):
-        return {self.id: [child._raw_structure() for child in self.children]}
-
     def unroll(self):
         """Unroll tree node and return an iterator of all the represented nodes.
         Order is defined as current node, then children, then children's
@@ -78,28 +68,6 @@ class Node(object):
             return True
 
         return self.parent.hasancestor(node)
-
-    @classmethod
-    def from_raw(cls, raw):
-        nodes = dict((id, cls(id, data)) for (id, data) in raw['data'].items())
-
-        cls._process_raw_structure(raw['structure'], nodes)
-
-        roots = [node for node in nodes.values() if not node.parent]
-        if len(roots) != 1:
-            raise NodeParseException(raw)
-
-        return roots[0]
-
-    @classmethod
-    def _process_raw_structure(cls, structure, nodes):
-        if len(structure) != 1:
-            raise NodeParseException()
-        for (id, children) in structure.items():
-            for child in children:
-                child_id = cls._process_raw_structure(child, nodes)
-                nodes[child_id].parent = nodes[id]
-            return id
 
 
 class EqualsDict(object):

@@ -1,20 +1,13 @@
 import py
-from pyggdrasil import model
-
-
-def assert_equal_nodes(node1, node2):
-    assert node1.id == node2.id
-    assert node1.data == node2.data
-    for (child1, child2) in zip(node1.children, node2.children):
-        assert_equal_nodes(child1, child2)
+import pyggdrasil
 
 
 class TestNode(object):
     def setup_method(self, method):
-        self.root = model.Node('the root', 'test data')
-        self.child1 = model.Node('child uno', 'some test', self.root)
-        self.child2 = model.Node('child duo', 'uber test', self.root)
-        self.grandchild1 = model.Node('child fool', 'uber test', self.child1)
+        self.root = pyggdrasil.model.Node('the root', 'test data')
+        self.child1 = pyggdrasil.model.Node('child uno', 'some test', self.root)
+        self.child2 = pyggdrasil.model.Node('child duo', 'uber test', self.root)
+        self.grandchild1 = pyggdrasil.model.Node('child fool', 'uber test', self.child1)
 
     def test_assign_corresponding_child(self):
         assert self.child1.parent == self.root
@@ -26,12 +19,6 @@ class TestNode(object):
         self.child1.parent = None
         self.child2.parent = None
         assert len(self.root.children) == 0
-
-    def test_convert_to_and_from_raw(self):
-        raw = self.root.raw()
-        generated = model.Node.from_raw(raw)
-
-        assert_equal_nodes(generated, self.root)
 
     def test_unroll_in_order_of_node_then_children_then_descendents(self):
         # TODO: Less hardcode, more awesome code
@@ -49,6 +36,6 @@ class TestNode(object):
         assert not self.grandchild1.hasancestor(self.child2)
 
     def test_reject_circular_tree(self):
-        py.test.raises(model.CircularTreeException,
+        py.test.raises(pyggdrasil.model.CircularTreeException,
                        'self.root.parent = self.grandchild1')
 
