@@ -3,9 +3,9 @@ from distutils.core import setup
 
 args = dict(
     name='Pyggdrasil',
-    version='0.0.1',
+    version='0.0.2',
     description='Pyggdrasil',
-    packages=['pyggdrasil', 'pyggdrasil.graph'],
+    packages=['pyggdrasil', 'pyggdrasil.graph', 'pyggdrasil.export'],
     scripts=['pygg'],
 )
 
