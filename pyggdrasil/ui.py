@@ -292,9 +292,9 @@ class Tree(wx.Panel):
     def Reload(self):
         self._tree.DeleteAllItems()
         self.nodes = pyggdrasil.model.EqualsDict()
-        self._PopulateTreeItem(self.root, None)
+        self._populatetree(self.root, None)
 
-    def _PopulateTreeItem(self, node, parent):
+    def _populatetree(self, node, parent):
         if parent:
             treeitem = self._tree.AppendItem(parent, node.id)
         else:
@@ -302,20 +302,22 @@ class Tree(wx.Panel):
         self.nodes[treeitem] = node
 
         for child in node.children:
-            self._PopulateTreeItem(child, treeitem)
+            self._populatetree(child, treeitem)
 
-    def _SortItem(self, item):
+        return treeitem
+
+    def _sorttree(self, item):
         self._tree.SortChildren(item)
         self.nodes[item].sort()
 
         # I want an iterator
         child = self._tree.GetFirstChild(item)[0]
         while child.IsOk():
-            self._SortItem(child)
+            self._sorttree(child)
             child = self._tree.GetNextSibling(child)
 
     def OnSort(self, event):
-        self._SortItem(self._tree.GetRootItem())
+        self._sorttree(self._tree.GetRootItem())
         wx.PostEvent(self, TreeChangedEvent())
 
     def OnRename(self, event):
@@ -343,7 +345,8 @@ class Tree(wx.Panel):
             self._childinput.Clear()
 
             if self.autosort:
-                self._SortItem(item)
+                self._sorttree(item)
+
             wx.PostEvent(self, TreeChangedEvent())
 
     def OnRemove(self, event):
@@ -384,7 +387,8 @@ class Tree(wx.Panel):
         else:
             del self.nodes[olditem]
             self._tree.Delete(olditem)
-            self._PopulateTreeItem(node, parentitem)
+            newitem = self._populatetree(node, parentitem)
+            self._tree.SelectItem(newitem)
             self._tree.Expand(parentitem)
 
             wx.PostEvent(self, TreeChangedEvent())
