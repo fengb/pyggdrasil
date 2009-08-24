@@ -416,7 +416,7 @@ class Config(wx.Panel):
             else:
                 self.graphoptions[key] = default
                 input.SetValue(str(default))
-            input.Bind(wx.EVT_TEXT, self.OnChange)
+            input.Bind(wx.EVT_KILL_FOCUS, self.OnChange)
 
             sizer.Add(input, 1, wx.EXPAND)
 
@@ -425,7 +425,7 @@ class Config(wx.Panel):
     def OnChange(self, event):
         key = self._keys[event.GetId()]
         try:
-            self.graphoptions[key] = float(event.GetString())
+            self.graphoptions[key] = float(self._inputs[key].GetValue())
             self._inputs[key].SetBackgroundColour('#FFFFFF')
         except ValueError:
             self._inputs[key].SetBackgroundColour('#FF6060')
