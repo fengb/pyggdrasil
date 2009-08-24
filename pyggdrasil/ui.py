@@ -15,8 +15,13 @@ class Main(wx.Frame):
         wx.Frame.__init__(self, *args, **kwargs)
 
         self.root = root or pyggdrasil.model.Node('root', None)
+        self.graphoptions = graphoptions or {}
         self.filename = filename
 
+        self.SetMenuBar(self._createmenubar())
+        self.SetSizer(self._createsizer())
+
+    def _createmenubar(self):
         menubar = wx.MenuBar()
 
         file = wx.Menu()
@@ -39,24 +44,25 @@ class Main(wx.Frame):
         file.Append(wx.ID_EXIT)
         menubar.Append(file, '&File')
 
-        self.SetMenuBar(menubar)
+        return menubar
 
-        box = wx.BoxSizer(wx.HORIZONTAL)
+    def _createsizer(self):
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self._tree = Tree(self.root, parent=self)
         self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
         self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
-        box.Add(self._tree, 0, wx.EXPAND)
+        sizer.Add(self._tree, 0, wx.EXPAND)
 
-        self._config = Config(graphoptions, parent=self)
+        self._config = Config(self.graphoptions, parent=self)
         self._config.Bind(CONFIG_CHANGED_EVENT, self.OnConfigChange)
-        box.Add(self._config, 0, wx.EXPAND)
+        sizer.Add(self._config, 0, wx.EXPAND)
 
-        self.graph = Graph(self.root, self._config.graphoptions, parent=self)
-        self.graph.Bind(GRAPH_SELECTED_EVENT, self.OnGraphSelected)
-        box.Add(self.graph, 1, wx.EXPAND)
+        self._graph = Graph(self.root, self.graphoptions, parent=self)
+        self._graph.Bind(GRAPH_SELECTED_EVENT, self.OnGraphSelected)
+        sizer.Add(self._graph, 1, wx.EXPAND)
 
-        self.SetSizer(box)
+        return sizer
 
     def getfilename(self):
         return self._filename
@@ -83,7 +89,7 @@ class Main(wx.Frame):
 
     def OnSave(self, event):
         if self.filename:
-            self._Save()
+            self._save()
         else:
             self.OnSaveAs(event)
 
@@ -93,13 +99,12 @@ class Main(wx.Frame):
             if '.' not in filename:
                 filename += '.pyg'
             self.filename = filename
-            self._Save()
+            self._save()
 
-    def _Save(self):
+    def _save(self):
         file = open(self.filename, 'w')
         try:
-            pyggdrasil.serialize.dump(file, self.root, self.graphoptions)
-            yaml.dump(self.root.raw(), file)
+            pyggdrasil.serialize.dump(file, self.root, self._config.graphoptions)
         finally:
             file.close()
 
@@ -111,7 +116,7 @@ class Main(wx.Frame):
                 filename += '.svg'
             file = open(filename, 'w')
             try:
-                file.write(pyggdrasil.export.svg.export(self.graph.graph))
+                file.write(pyggdrasil.export.svg.export(self._graph.graph))
             finally:
                 file.close()
 
@@ -119,13 +124,13 @@ class Main(wx.Frame):
         self.Close()
 
     def OnTreeChange(self, event):
-        self.graph.Reload()
+        self._graph.Reload()
 
     def OnConfigChange(self, event):
-        self.graph.Reload()
+        self._graph.Reload()
 
     def OnTreeSelected(self, event):
-        self.graph.selected = self._tree.selected
+        self._graph.selected = self._tree.selected
 
     def OnGraphSelected(self, event):
         self._tree.selected = event.target
@@ -382,13 +387,10 @@ class Tree(wx.Panel):
 
 
 class Config(wx.Panel):
-    def __init__(self, graphoptions=None, *args, **kwargs):
+    def __init__(self, graphoptions, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
 
-        if graphoptions is None:
-            self.graphoptions = {}
-        else:
-            self.graphoptions = graphoptions
+        self.graphoptions = graphoptions
 
         sizer = wx.FlexGridSizer(rows=0, cols=2)
 
