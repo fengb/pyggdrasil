@@ -35,16 +35,16 @@ class Graph(object):
         radius
         padding
         normalize
-        arrowlength - arrow edge length
-        arrowwidth - arrow arc width in radians
+        arrowlength
+        arrowwidth
     """
     def __init__(self, rawgraph, normalize=True, radius=0.5, padding=0.0,
-                 arrowlength=None, arrowwidth=0.5):
+                 arrowlength=None, arrowwidth=None):
         self.normalize = normalize
         self.radius = radius
         self.padding = padding
         self.arrowlength = arrowlength or padding
-        self.arrowwidth = arrowwidth
+        self.arrowwidth = arrowwidth or padding
 
         cached = list(rawgraph)
 

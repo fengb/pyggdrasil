@@ -176,8 +176,11 @@ class Graph(wx.ScrolledWindow):
                 lines.append((spos.real, spos.imag, epos.real, epos.imag))
 
                 # Little arrow at the end
-                pos1 = epos - self.graph.arrowlength * cmath.exp((direction + self.graph.arrowwidth / 2.0) * 1j)
-                pos2 = epos - self.graph.arrowlength * cmath.exp((direction - self.graph.arrowwidth / 2.0) * 1j)
+                # Base arrowhead is horizontal (looks like >)
+                pos1 = -self.graph.arrowlength - 1j*self.graph.arrowwidth/2.0
+                pos1 = (pos1 * cmath.exp(1j*direction)) + epos
+                pos2 = -self.graph.arrowlength + 1j*self.graph.arrowwidth/2.0
+                pos2 = (pos2 * cmath.exp(1j*direction)) + epos
                 polygons.append([(epos.real, epos.imag),
                                  (pos1.real, pos1.imag), (pos2.real, pos2.imag)])
 
@@ -391,8 +394,8 @@ class Config(wx.Panel):
 
         # TODO: Move config fields to graph
         self._graphinputs = pyggdrasil.model.EqualsDict()
-        for (name, default) in [('Radius', 40.0), ('Padding', 5.0),
-                                ('Arrow Width', 0.5), ('Arrow Length', 5.0)]:
+        for (name, default) in [('Radius', 40), ('Padding', 5),
+                                ('Arrow Width', 5), ('Arrow Length', 5)]:
             key = name.replace(' ', '').lower()
             text = wx.StaticText(self, wx.ID_ANY, name)
             sizer.Add(text)

@@ -16,18 +16,17 @@ def export(graph):
     })
 
     defs = et.SubElement(root, 'defs')
-    arrowwidth, arrowheight = _arrowdimensions(graph)
-    # X and Y are reversed
+    # Base arrowhead is horizontal (looks like >)
     arrow = et.SubElement(defs, 'marker', {
         'id': 'arrowhead', 
-        'viewBox': '0 0 %s %s' % (arrowheight, arrowwidth),
-        'refX': str(arrowheight), 'refY': str(arrowwidth / 2.0),
+        'viewBox': '0 0 %s %s' % (graph.arrowlength, graph.arrowwidth),
+        'refX': str(graph.arrowlength), 'refY': str(graph.arrowwidth / 2.0),
         'markerUnits': 'strokeWidth',
-        'markerWidth': str(arrowheight), 'markerHeight': str(arrowwidth),
+        'markerWidth': str(graph.arrowlength), 'markerHeight': str(graph.arrowwidth),
         'orient': 'auto',
     })
     et.SubElement(arrow, 'polygon', {
-        'points': '0,0 %s,%s 0,%s' % (arrowheight, arrowwidth / 2.0, arrowwidth),
+        'points': '0,0 %s,%s 0,%s' % (graph.arrowlength, graph.arrowwidth / 2.0, graph.arrowwidth),
         'fill': 'black', 'stroke': 'black',
     })
 
@@ -58,8 +57,3 @@ def export(graph):
         text.text = node.id
 
     return et.tostring(root)
-
-
-def _arrowdimensions(graph):
-    vector = graph.arrowlength * cmath.exp((cmath.pi / 2.0 - graph.arrowwidth / 2.0) * 1j)
-    return 2.0 * vector.real, vector.imag
