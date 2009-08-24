@@ -49,14 +49,18 @@ class Main(wx.Frame):
     def _createsizer(self):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self._tree = Tree(self.root, parent=self)
+        notebook = wx.Notebook(self, id=wx.ID_ANY)
+
+        self._tree = Tree(self.root, parent=notebook)
         self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
         self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
-        sizer.Add(self._tree, 0, wx.EXPAND)
+        notebook.AddPage(self._tree, 'Tree')
 
-        self._config = Config(self.graphoptions, parent=self)
+        self._config = Config(self.graphoptions, parent=notebook)
         self._config.Bind(CONFIG_CHANGED_EVENT, self.OnConfigChange)
-        sizer.Add(self._config, 0, wx.EXPAND)
+        notebook.AddPage(self._config, 'Config')
+
+        sizer.Add(notebook, 0, wx.EXPAND)
 
         self._graph = Graph(self.root, self.graphoptions, parent=self)
         self._graph.Bind(GRAPH_SELECTED_EVENT, self.OnGraphSelected)
@@ -393,6 +397,7 @@ class Config(wx.Panel):
         self.graphoptions = graphoptions
 
         sizer = wx.FlexGridSizer(rows=0, cols=2)
+        sizer.AddGrowableCol(1, 1)
 
         # TODO: Move config fields to graph
         self._graphinputs = pyggdrasil.model.EqualsDict()
@@ -411,7 +416,7 @@ class Config(wx.Panel):
                 input.SetValue(str(default))
             input.Bind(wx.EVT_TEXT, self.OnChange)
 
-            sizer.Add(input)
+            sizer.Add(input, 1, wx.EXPAND)
 
         self.SetSizer(sizer)
 
