@@ -7,14 +7,12 @@ import pyggdrasil
 
 TreeChangedEvent, TREE_CHANGED_EVENT = wx.lib.newevent.NewEvent()
 GraphSelectedEvent, GRAPH_SELECTED_EVENT = wx.lib.newevent.NewEvent()
+ConfigChangedEvent, CONFIG_CHANGED_EVENT = wx.lib.newevent.NewEvent()
 
 
 class Main(wx.Frame):
     def __init__(self, root=None, graphoptions=None, filename=None, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
-
-        if not graphoptions:
-            graphoptions = {'radius': 40, 'padding': 5}
 
         self.root = root or pyggdrasil.model.Node('root', None)
         self.filename = filename
@@ -45,17 +43,20 @@ class Main(wx.Frame):
 
         box = wx.BoxSizer(wx.HORIZONTAL)
 
-        self._tree = Tree(self.root, self)
+        self._tree = Tree(self.root, parent=self)
+        self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
+        self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
         box.Add(self._tree, 0, wx.EXPAND)
 
-        self.graph = Graph(self.root, graphoptions, parent=self)
+        self._config = Config(graphoptions, parent=self)
+        self._config.Bind(CONFIG_CHANGED_EVENT, self.OnConfigChange)
+        box.Add(self._config, 0, wx.EXPAND)
+
+        self.graph = Graph(self.root, self._config.graphoptions, parent=self)
+        self.graph.Bind(GRAPH_SELECTED_EVENT, self.OnGraphSelected)
         box.Add(self.graph, 1, wx.EXPAND)
 
         self.SetSizer(box)
-
-        self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
-        self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
-        self.graph.Bind(GRAPH_SELECTED_EVENT, self.OnGraphSelected)
 
     def getfilename(self):
         return self._filename
@@ -118,6 +119,9 @@ class Main(wx.Frame):
         self.Close()
 
     def OnTreeChange(self, event):
+        self.graph.Reload()
+
+    def OnConfigChange(self, event):
         self.graph.Reload()
 
     def OnTreeSelected(self, event):
@@ -372,6 +376,45 @@ class Tree(wx.Panel):
             self._tree.Expand(parentitem)
 
             wx.PostEvent(self, TreeChangedEvent())
+
+
+class Config(wx.Panel):
+    def __init__(self, graphoptions=None, *args, **kwargs):
+        wx.Panel.__init__(self, *args, **kwargs)
+
+        if graphoptions is None:
+            self.graphoptions = {}
+        else:
+            self.graphoptions = graphoptions
+
+        sizer = wx.FlexGridSizer(rows=0, cols=2)
+
+        # TODO: Move config fields to graph
+        self._graphinputs = pyggdrasil.model.EqualsDict()
+        for (name, default) in [('Radius', 40.0), ('Padding', 5.0),
+                                ('Arrow Width', 0.5), ('Arrow Length', 5.0)]:
+            key = name.replace(' ', '').lower()
+            text = wx.StaticText(self, wx.ID_ANY, name)
+            sizer.Add(text)
+
+            input = wx.TextCtrl(self, wx.ID_ANY)
+            self._graphinputs[input.GetId()] = key
+            if key in self.graphoptions:
+                input.SetValue(str(self.graphoptions[key]))
+            else:
+                self.graphoptions[key] = default
+                input.SetValue(str(default))
+            input.Bind(wx.EVT_TEXT, self.OnChange)
+
+            sizer.Add(input)
+
+        self.SetSizer(sizer)
+
+    def OnChange(self, event):
+        key = self._graphinputs[event.GetId()]
+        self.graphoptions[key] = float(event.GetString())
+        wx.PostEvent(self, ConfigChangedEvent())
+
 
 class App(wx.App):
     def OnInit(self):
