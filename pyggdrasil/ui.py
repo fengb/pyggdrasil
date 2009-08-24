@@ -400,7 +400,8 @@ class Config(wx.Panel):
         sizer.AddGrowableCol(1, 1)
 
         # TODO: Move config fields to graph
-        self._graphinputs = pyggdrasil.model.EqualsDict()
+        self._keys = pyggdrasil.model.EqualsDict()
+        self._inputs = {}
         for (name, default) in [('Radius', 40), ('Padding', 5),
                                 ('Arrow Width', 5), ('Arrow Length', 5)]:
             key = name.replace(' ', '').lower()
@@ -408,7 +409,8 @@ class Config(wx.Panel):
             sizer.Add(text)
 
             input = wx.TextCtrl(self, wx.ID_ANY)
-            self._graphinputs[input.GetId()] = key
+            self._keys[input.GetId()] = key
+            self._inputs[key] = input
             if key in self.graphoptions:
                 input.SetValue(str(self.graphoptions[key]))
             else:
@@ -421,8 +423,13 @@ class Config(wx.Panel):
         self.SetSizer(sizer)
 
     def OnChange(self, event):
-        key = self._graphinputs[event.GetId()]
-        self.graphoptions[key] = float(event.GetString())
+        key = self._keys[event.GetId()]
+        try:
+            self.graphoptions[key] = float(event.GetString())
+            self._inputs[key].SetBackgroundColour('#FFFFFF')
+        except ValueError:
+            self._inputs[key].SetBackgroundColour('#FF6060')
+
         wx.PostEvent(self, ConfigChangedEvent())
 
 
