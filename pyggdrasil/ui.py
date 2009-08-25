@@ -199,6 +199,7 @@ class Graph(wx.ScrolledWindow):
 
     def OnPaint(self, event):
         dc = wx.AutoBufferedPaintDC(self)
+        self.PrepareDC(dc)
         dc.BeginDrawing()
         dc.Clear()
 
