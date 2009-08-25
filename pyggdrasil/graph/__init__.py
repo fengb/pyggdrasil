@@ -1,27 +1,32 @@
+"""
+RawGraph - any iterable with the following requirements:
+    1. Each item must be a (node, position) pair.
+    2. The first node must be the root.
+    3. Every position is given as complex(x, y) to simplify calculations.
+    4. A position may also be None, which means do not draw. An 'empty'
+       comparison should use "is None" since complex(0, 0) is valid.
+    5. Every node is assumed to be size (1, 1).
+"""
+
+
 import math
 import cmath
 
 from . import topdown
 
 
-def generate(root, algorithm=topdown, *args, **kwargs):
+def generate(root, module=topdown, *args, **kwargs):
     """Convert a tree node into a graph using the given module.
 
     The module must implement the following:
 
-    def generate(root) -> any iterable with the following requirements:
-        1. Each item must be a (node, position) pair.
-        2. The first node must be the root.
-        3. Every position is given as complex(x, y) to simplify calculations.
-        4. A position may also be None, which means do not draw. An 'empty'
-           comparison should use "is None" since complex(0, 0) is valid.
-        5. Every node is assumed to be size (1, 1).
+    def generate(root) -> RawGraph
     """
-    return Graph(algorithm.generate(root), *args, **kwargs)
+    return Graph(module.generate(root), *args, **kwargs)
 
 
 class Graph(object):
-    """A graph implementation that takes a low graph.
+    """Reference Graph implementation that generates a Graph from a RawGraph.
 
     Graph calculates the minimum sized box (width, height) that can
     contain all of the nodes, taking into account the node size of (1, 1).
@@ -30,48 +35,63 @@ class Graph(object):
     contained within the box (0, 0) and (width, height).
 
     Fields:
+        normalized
+        scaled
         width
         height
         radius
         padding
-        normalize
         arrowlength
         arrowwidth
     """
-    def __init__(self, rawgraph, normalize=True, radius=0.5, padding=0.0,
+    def __init__(self, rawgraph, normalize=True, scale=True,
+                 radius=0.5, padding=0.0,
                  arrowlength=None, arrowwidth=None):
-        self.normalize = normalize
+        """If scale is false, node positions will not shift based upon radius
+        and padding.
+        """
+        self.normalized = normalize
+        self.scaled = scale
         self.radius = radius
         self.padding = padding
         self.arrowlength = arrowlength or padding
         self.arrowwidth = arrowwidth or padding
 
-        cached = list(rawgraph)
+        scalar = 2 * (radius + padding)
 
-        xmin = min(pos.real for (node, pos) in cached) - 0.5
-        xmax = max(pos.real for (node, pos) in cached) + 0.5
-        ymin = min(pos.imag for (node, pos) in cached) - 0.5
-        ymax = max(pos.imag for (node, pos) in cached) + 0.5
+        if scale:
+            cached = [(node, pos*scalar) for (node, pos) in rawgraph]
+        else:
+            cached = list(rawgraph)
 
-        self.width = self._scalar() * (xmax - xmin)
-        self.height = self._scalar() * (ymax - ymin)
+        xmin = min(pos.real for (node, pos) in cached) - 0.5*scalar
+        xmax = max(pos.real for (node, pos) in cached) + 0.5*scalar
+        ymin = min(pos.imag for (node, pos) in cached) - 0.5*scalar
+        ymax = max(pos.imag for (node, pos) in cached) + 0.5*scalar
 
-        self._mins = complex(xmin, ymin)
-        self._nodespos = dict(cached)
+        self.width = xmax - xmin
+        self.height = ymax - ymin
 
-    def _scalar(self):
-        return 2 * (self.radius + self.padding)
+        if normalize:
+            offset = complex(xmin, ymin)
+            self._nodespos = dict((node, pos - offset) for (node, pos) in cached)
+        else:
+            self._nodespos = dict(cached)
+
+    def __in__(self, key):
+        return key in self._nodespos
 
     def __iter__(self):
         return iter(self._nodespos)
 
+    def raw(self):
+        """Return RawGraph equivalent of the Graph."""
+        for node in self:
+            yield (node, self.pos(node))
+
     def pos(self, node):
         """Return the draw position of the node."""
-        if self.normalize:
-            pos = self._nodespos[node] - self._mins
-        else:
-            pos = self._nodespos[node]
-        return pos * self._scalar()
+        return self._nodespos[node]
 
     def hasline(self, node):
         return node.parent is not None and \
