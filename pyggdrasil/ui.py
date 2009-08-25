@@ -155,13 +155,14 @@ class Graph(wx.ScrolledWindow):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnMouseClick)
 
+        self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.SetScrollRate(1, 1)
 
     def getselected(self):
         return self._selected
     def setselected(self, value):
         self._selected = value
-        self.Refresh(eraseBackground=True)
+        self.Refresh()
     selected = property(getselected, setselected)
 
     def Reload(self):
@@ -175,7 +176,7 @@ class Graph(wx.ScrolledWindow):
             self.graph = pyggdrasil.graph.generate(self.root, **self.graphoptions)
             self._drawgraph = self._oldgraph
 
-            self._drawtimer.Start(10)
+            self._drawtimer.Start(15)
             self._timeramount = 0
 
         if self.selected not in self.graph:
@@ -194,12 +195,12 @@ class Graph(wx.ScrolledWindow):
             self._drawgraph = self.graph
 
         self.SetVirtualSize((self._drawgraph.width, self._drawgraph.height))
-        self.Refresh(eraseBackground=True)
+        self.Refresh()
 
     def OnPaint(self, event):
-        dc = wx.PaintDC(self)
-        self.PrepareDC(dc)
+        dc = wx.AutoBufferedPaintDC(self)
         dc.BeginDrawing()
+        dc.Clear()
 
         lines = []
         polygons = []
