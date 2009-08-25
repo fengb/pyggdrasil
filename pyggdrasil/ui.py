@@ -155,6 +155,8 @@ class Graph(wx.ScrolledWindow):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnMouseClick)
 
+        self.SetScrollRate(1, 1)
+
     def getselected(self):
         return self._selected
     def setselected(self, value):
@@ -168,6 +170,7 @@ class Graph(wx.ScrolledWindow):
         except AttributeError:
             self.graph = pyggdrasil.graph.generate(self.root, **self.graphoptions)
             self._drawgraph = self.graph
+            self.SetVirtualSize((self._drawgraph.width, self._drawgraph.height))
         else:
             self.graph = pyggdrasil.graph.generate(self.root, **self.graphoptions)
             self._drawgraph = self._oldgraph
@@ -179,8 +182,6 @@ class Graph(wx.ScrolledWindow):
             self.selected = None
 
         pos = self.GetViewStart()
-        self.SetScrollbars(1, 1, self.graph.width, self.graph.height)
-        self.Scroll(*pos)
 
     def OnTimer(self, event):
         # TODO: Remove hardcode
@@ -192,6 +193,7 @@ class Graph(wx.ScrolledWindow):
             self._drawtimer.Stop()
             self._drawgraph = self.graph
 
+        self.SetVirtualSize((self._drawgraph.width, self._drawgraph.height))
         self.Refresh(eraseBackground=True)
 
     def OnPaint(self, event):
