@@ -128,15 +128,21 @@ class Graph(object):
 def transition(startgraph, endgraph, endweight):
     startweight = 1 - endweight
 
-    nodes = []
-    for node in endgraph:
-        if node not in startgraph:
-            pos = endgraph.pos(node)
-        else:
-            pos = endgraph.pos(node)*endweight + startgraph.pos(node)*startweight
+    nodespos = []
+    nodes = set(startgraph) | set(endgraph)
+    for node in nodes:
+        startpos = _ancestorpos(startgraph, node)
+        endpos = _ancestorpos(endgraph, node)
+        pos = startpos*startweight + endpos*endweight
 
-        nodes.append((node, pos))
+        nodespos.append((node, pos))
 
-    return Graph(nodes, scale=False,
+    return Graph(nodespos, scale=False,
                  radius=endgraph.radius, padding=endgraph.padding,
                  arrowwidth=endgraph.arrowwidth, arrowlength=endgraph.arrowlength)
+
+
+def _ancestorpos(graph, node):
+    while node not in graph:
+        node = node.parent
+    return graph.pos(node)

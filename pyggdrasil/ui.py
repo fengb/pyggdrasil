@@ -185,10 +185,12 @@ class Graph(wx.ScrolledWindow):
     def OnTimer(self, event):
         # TODO: Remove hardcode
         self._timeramount += 1
-        if self._timeramount >= 20:
+        if self._timeramount < 20:
+            self._drawgraph = pyggdrasil.graph.transition(self._oldgraph, self.graph,
+                                                          self._timeramount / 20.0)
+        else:
             self._drawtimer.Stop()
-        self._drawgraph = pyggdrasil.graph.transition(self._oldgraph, self.graph,
-                                                      self._timeramount / 20.0)
+            self._drawgraph = self.graph
 
         self.Refresh(eraseBackground=True)
 
@@ -381,7 +383,8 @@ class Tree(wx.Panel):
         if not self.nodes[item].parent:
             return
 
-        self.nodes[item].parent = None
+        node = self.nodes[item]
+        node.parent.children.remove(node)
         del self.nodes[item]
         self._tree.Delete(item)
 
