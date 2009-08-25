@@ -123,3 +123,20 @@ class Graph(object):
 
     def _lineoffset(self, node):
         return self.radius * cmath.exp(self.linedir(node) * 1j)
+
+
+def transition(startgraph, endgraph, endweight):
+    startweight = 1 - endweight
+
+    nodes = []
+    for node in endgraph:
+        if node not in startgraph:
+            pos = endgraph.pos(node)
+        else:
+            pos = endgraph.pos(node)*endweight + startgraph.pos(node)*startweight
+
+        nodes.append((node, pos))
+
+    return Graph(nodes, scale=False,
+                 radius=endgraph.radius, padding=endgraph.padding,
+                 arrowwidth=endgraph.arrowwidth, arrowlength=endgraph.arrowlength)
