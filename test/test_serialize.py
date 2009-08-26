@@ -23,3 +23,12 @@ class TestNode(object):
 
         assert_equal_nodes(root, self.root)
         assert graphoptions == self.graphoptions
+
+    def test_convert_same_node_ids_as_different_values(self):
+        self.child1.id = self.root.id
+
+        raw = pyggdrasil.serialize.toraw(self.root, self.graphoptions)
+        root, graphoptions = pyggdrasil.serialize.fromraw(raw)
+
+        assert_equal_nodes(root, self.root)
+        assert graphoptions == self.graphoptions

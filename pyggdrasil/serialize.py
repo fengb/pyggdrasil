@@ -1,3 +1,4 @@
+import re
 import yaml
 import pyggdrasil
 
@@ -16,14 +17,27 @@ def dump(stream, *args, **kwargs):
 
 
 def toraw(root, graphoptions):
+    ids = {}
+    usedids = set()
+    for node in root.unroll():
+        id = node.id
+        num = 0
+
+        while id in usedids:
+            id = '%s {{{%d}}}' % (node.id, num)
+            num += 1
+
+        ids[node] = id
+        usedids.add(id)
+
     return {
-        'data': dict((node.id, node.data) for node in root.unroll()),
-        'structure': _tostructure(root),
+        'data': dict((ids[node], node.data) for node in root.unroll()),
+        'structure': _tostructure(root, ids),
         'graph': graphoptions,
     }
 
-def _tostructure(self):
-    return {self.id: [_tostructure(child) for child in self.children]}
+def _tostructure(node, ids):
+    return {ids[node]: [_tostructure(child, ids) for child in node.children]}
 
 
 def fromraw(raw):
@@ -34,8 +48,14 @@ def _fromstructure(structure, data, parent=None):
     if len(structure) != 1:
         raise NodeParseException()
 
-    for (id, children) in structure.items():
-        node = pyggdrasil.model.Node(id, data[id], parent)
+    for (rawid, children) in structure.items():
+        match = re.match(r'^(.*) \{\{\{\d*\}\}\}$', rawid)
+        if match:
+            id = match.group(1)
+        else:
+            id = rawid
+
+        node = pyggdrasil.model.Node(id, data[rawid], parent)
         for child in children:
-            child_id = _fromstructure(child, data, node)
+            childnode = _fromstructure(child, data, node)
         return node
