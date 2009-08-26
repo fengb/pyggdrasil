@@ -298,13 +298,9 @@ class Tree(wx.Panel):
         sizer.AddStretchSpacer()
         sizer.AddStretchSpacer()
 
-        sort = wx.Button(self, wx.ID_ANY, 'Sort')
-        sort.Bind(wx.EVT_BUTTON, self.OnSort)
-        sizer.Add(sort, 1, wx.EXPAND)
-
-        self._autosort = wx.CheckBox(self, wx.ID_ANY, 'Auto Sort')
-        self._autosort.Bind(wx.EVT_CHECKBOX, self.OnSort)
-        sizer.Add(self._autosort)
+        self._sort = wx.CheckBox(self, wx.ID_ANY, 'Sort')
+        self._sort.Bind(wx.EVT_CHECKBOX, self.OnSort)
+        sizer.Add(self._sort)
 
         return sizer
 
@@ -316,8 +312,8 @@ class Tree(wx.Panel):
     selected = property(getselected, setselected)
 
     @property
-    def autosort(self):
-        return self._autosort.IsChecked()
+    def sort(self):
+        return self._sort.IsChecked()
 
     def Reload(self):
         self._tree.DeleteAllItems()
@@ -368,13 +364,13 @@ class Tree(wx.Panel):
         if nodeid:
             node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[item])
 
-            newitem = self._tree.AppendItem(item, nodeid)
-            self.nodes[newitem] = node
+            child = self._tree.AppendItem(item, nodeid)
+            self.nodes[child] = node
             self._tree.Expand(item)
 
             self._childinput.Clear()
 
-            if self.autosort:
+            if self.sort:
                 self._sorttree(item)
 
             wx.PostEvent(self, TreeChangedEvent())
@@ -400,27 +396,28 @@ class Tree(wx.Panel):
             event.Allow()
 
     def OnEndDrag(self, event):
-        parentitem = event.GetItem()
+        parent = event.GetItem()
         olditem = self._dragitem
 
-        if not parentitem.IsOk():
+        if not parent.IsOk():
             return
-        if parentitem == olditem:
+        if parent == olditem:
             return
-        if parentitem == self._tree.GetItemParent(olditem):
+        if parent == self._tree.GetItemParent(olditem):
             return
 
         try:
             node = self.nodes[olditem]
-            node.parent = self.nodes[parentitem]
+            node.parent = self.nodes[parent]
         except pyggdrasil.model.CircularTreeException:
             pass
         else:
             del self.nodes[olditem]
             self._tree.Delete(olditem)
-            newitem = self._populatetree(node, parentitem)
+            newitem = self._populatetree(node, parent)
+            self._sorttree(parent)
             self._tree.SelectItem(newitem)
-            self._tree.Expand(parentitem)
+            self._tree.Expand(parent)
 
             wx.PostEvent(self, TreeChangedEvent())
 
