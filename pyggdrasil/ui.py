@@ -37,8 +37,15 @@ class Main(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnSave, save)
         saveas = file.Append(wx.ID_SAVEAS)
         self.Bind(wx.EVT_MENU, self.OnSaveAs, saveas)
-        export = file.Append(wx.ID_ANY, 'Export...')
-        self.Bind(wx.EVT_MENU, self.OnExport, export)
+        file.AppendSeparator()
+
+        self._exports = pyggdrasil.model.EqualsDict()
+        export = wx.Menu()
+        for module in pyggdrasil.export.ALL:
+            menuitem = export.Append(wx.ID_ANY, pyggdrasil.export.name(module))
+            self.Bind(wx.EVT_MENU, self.OnExport, menuitem)
+            self._exports[menuitem.GetId()] = module
+        file.AppendSubMenu(export, 'Export')
         file.AppendSeparator()
 
         file.Append(wx.ID_EXIT)
@@ -113,14 +120,17 @@ class Main(wx.Frame):
             file.close()
 
     def OnExport(self, event):
-        # TODO: Remove hardcoded reference to SVG
-        filename = wx.SaveFileSelector('SVG', extension='svg', parent=self)
+        module = self._exports[event.GetId()]
+        name = pyggdrasil.export.name(module)
+        extension = pyggdrasil.export.extension(module)
+
+        filename = wx.SaveFileSelector(name, extension=extension, parent=self)
         if filename:
             if '.' not in filename:
-                filename += '.svg'
+                filename += '.' + extension
             file = open(filename, 'w')
             try:
-                file.write(pyggdrasil.export.svg.export(self._graph.graph))
+                file.write(module.export(self._graph.graph))
             finally:
                 file.close()
 
