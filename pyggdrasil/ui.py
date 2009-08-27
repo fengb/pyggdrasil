@@ -318,9 +318,9 @@ class Tree(wx.Panel):
     def Reload(self):
         self._tree.DeleteAllItems()
         self.nodes = pyggdrasil.model.EqualsDict()
-        self._populatetree(self.root, None)
+        self._populatenode(self.root)
 
-    def _populatetree(self, node, parent):
+    def _populatenode(self, node, parent=None):
         if parent:
             treeitem = self._tree.AppendItem(parent, node.id)
         else:
@@ -328,19 +328,40 @@ class Tree(wx.Panel):
         self.nodes[treeitem] = node
 
         for child in node.children:
-            self._populatetree(child, treeitem)
+            self._populatenode(child, treeitem)
 
         return treeitem
+
+    def _moveitem(self, item, newparent):
+        # TODO: Push down to wxTreeCtrl (as a patch maybe)
+        newitem = self._tree.AppendItem(newparent, self._tree.GetItemText(item))
+        self.nodes[newitem] = self.nodes[item]
+
+        for child in self._children(item):
+            self._moveitem(child, newitem)
+
+        if self._tree.IsExpanded(item):
+            self._tree.Expand(newitem)
+
+        self._tree.Delete(item)
+        del self.nodes[item]
+        return newitem
 
     def _sorttree(self, item):
         self._tree.SortChildren(item)
         self.nodes[item].sort()
 
-        # I want an iterator
+        for child in self._children(item):
+            self._sorttree(child)
+
+    def _children(self, item):
+        # Not an iterator because deleting items confuses GetNextSibling
+        children = []
         child = self._tree.GetFirstChild(item)[0]
         while child.IsOk():
-            self._sorttree(child)
+            children.append(child)
             child = self._tree.GetNextSibling(child)
+        return children
 
     def OnSort(self, event):
         self._sorttree(self._tree.GetRootItem())
@@ -412,12 +433,11 @@ class Tree(wx.Panel):
         except pyggdrasil.model.CircularTreeException:
             pass
         else:
-            del self.nodes[olditem]
-            self._tree.Delete(olditem)
-            newitem = self._populatetree(node, parent)
-            self._sorttree(parent)
+            newitem = self._moveitem(olditem, parent)
             self._tree.SelectItem(newitem)
-            self._tree.Expand(parent)
+
+            if self.sort:
+                self._sorttree(parent)
 
             wx.PostEvent(self, TreeChangedEvent())
 
