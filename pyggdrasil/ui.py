@@ -201,6 +201,10 @@ class Graph(wx.ScrolledWindow):
         dc = wx.AutoBufferedPaintDC(self)
         self.PrepareDC(dc)
         dc.BeginDrawing()
+
+        # TODO: Make this less crazy
+        if dc.GetBackground().GetColour() == (0, 0, 0, 255):
+            dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
         dc.Clear()
 
         lines = []
