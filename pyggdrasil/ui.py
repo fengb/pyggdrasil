@@ -383,7 +383,6 @@ class Tree(wx.Panel):
     def OnAdd(self, event):
         nodeid = self._childinput.GetValue()
         if not nodeid:
-            event.Veto()
             return
 
         parent = self._tree.GetSelection()
@@ -404,7 +403,6 @@ class Tree(wx.Panel):
         #TODO: Deal with children somehow
         item = self._tree.GetSelection()
         if not self.nodes[item].parent:
-            event.Veto()
             return
 
         node = self.nodes[item]
