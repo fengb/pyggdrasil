@@ -145,7 +145,7 @@ class Graph(wx.ScrolledWindow):
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
 
         self.graphoptions = graphoptions
-        self._selected = None
+        self.selected = root
 
         self._drawtimer = wx.Timer(self, wx.ID_ANY)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
@@ -278,6 +278,8 @@ class Tree(wx.Panel):
         self.root = root
         self.Reload()
 
+        self.selected = self.root
+
     def _buttoncontrols(self):
         sizer = wx.GridSizer(rows=0, cols=2)
 
@@ -379,29 +381,30 @@ class Tree(wx.Panel):
         wx.PostEvent(self, TreeChangedEvent())
 
     def OnAdd(self, event):
-        item = self._tree.GetSelection()
         nodeid = self._childinput.GetValue()
+        if not nodeid:
+            event.Veto()
+            return
 
-        if nodeid:
-            node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[item])
+        parent = self._tree.GetSelection()
+        node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[parent])
 
-            child = self._tree.AppendItem(item, nodeid)
-            self.nodes[child] = node
-            self._tree.Expand(item)
+        item = self._tree.AppendItem(parent, nodeid)
+        self.nodes[item] = node
+        self._tree.Expand(parent)
 
-            self._childinput.Clear()
+        self._childinput.Clear()
 
-            if self.sort:
-                self._sorttree(item)
+        if self.sort:
+            self._sorttree(parent)
 
-            wx.PostEvent(self, TreeChangedEvent())
+        wx.PostEvent(self, TreeChangedEvent())
 
     def OnRemove(self, event):
         #TODO: Deal with children somehow
         item = self._tree.GetSelection()
-
-        # Do not let root node get removed
         if not self.nodes[item].parent:
+            event.Veto()
             return
 
         node = self.nodes[item]
@@ -420,17 +423,17 @@ class Tree(wx.Panel):
         parent = event.GetItem()
         olditem = self._dragitem
 
-        if not parent.IsOk():
-            return
-        if parent == olditem:
-            return
-        if parent == self._tree.GetItemParent(olditem):
+        if not parent.IsOk() or \
+           parent == olditem or \
+           parent == self._tree.GetItemParent(olditem):
+            event.Veto()
             return
 
         try:
             node = self.nodes[olditem]
             node.parent = self.nodes[parent]
         except pyggdrasil.model.CircularTreeException:
+            event.Veto()
             pass
         else:
             newitem = self._moveitem(olditem, parent)
