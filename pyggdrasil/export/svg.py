@@ -1,6 +1,3 @@
-import cmath
-
-
 try:
     # 2.5 built-in
     import xml.etree.ElementTree as et
@@ -9,7 +6,7 @@ except ImportError:
     import elementtree.ElementTree as et
 
 
-def export(graph):
+def export(graph, filename):
     root = et.Element('svg', {
         'xmlns': 'http://www.w3.org/2000/svg',
         'width': str(graph.width), 'height': str(graph.height),
@@ -56,4 +53,8 @@ def export(graph):
         })
         text.text = node.id
 
-    return et.tostring(root)
+    file = open(filename, 'w')
+    try:
+        file.write(et.tostring(root))
+    finally:
+        file.close()

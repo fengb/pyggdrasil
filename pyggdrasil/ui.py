@@ -128,11 +128,7 @@ class Main(wx.Frame):
         if filename:
             if '.' not in filename:
                 filename += '.' + extension
-            file = open(filename, 'w')
-            try:
-                file.write(module.export(self._graph.graph))
-            finally:
-                file.close()
+            module.export(self._graph.graph, filename)
 
     def OnClose(self, event):
         self.Close()
