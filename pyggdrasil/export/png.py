@@ -1,3 +1,4 @@
+import cmath
 import PIL.Image
 import PIL.ImageDraw
 
@@ -10,7 +11,8 @@ def export(graph, filename):
     scaledgraph = graph.scale(SCALE)
 
     # I love inconsistent conventions
-    image = PIL.Image.new('L', (int(scaledgraph.width), int(scaledgraph.height)), '#FFFFFF')
+    image = PIL.Image.new('L', (int(scaledgraph.width), int(scaledgraph.height)),
+                          '#FFFFFF')
     draw = PIL.ImageDraw.Draw(image)
 
     for node in scaledgraph:
@@ -20,6 +22,10 @@ def export(graph, filename):
 
             draw.line([spos.real, spos.imag, epos.real, epos.imag],
                       fill='#000000', width=SCALE)
+
+            points = [(pos.real, pos.imag)
+                          for pos in scaledgraph.arrowpoints(node)]
+            draw.polygon(points, outline='#000000', fill='#000000')
 
     for node in scaledgraph:
         pos = scaledgraph.pos(node)
