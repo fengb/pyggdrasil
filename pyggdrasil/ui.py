@@ -1,6 +1,5 @@
 import wx
 import wx.lib.newevent
-import cmath
 
 import pyggdrasil
 
@@ -41,10 +40,13 @@ class Main(wx.Frame):
 
         self._exports = pyggdrasil.model.EqualsDict()
         export = wx.Menu()
-        for module in pyggdrasil.export.ALL:
+        for (module, available) in pyggdrasil.export.ALL:
             menuitem = export.Append(wx.ID_ANY, pyggdrasil.export.name(module))
-            self.Bind(wx.EVT_MENU, self.OnExport, menuitem)
-            self._exports[menuitem.GetId()] = module
+            if available:
+                self.Bind(wx.EVT_MENU, self.OnExport, menuitem)
+                self._exports[menuitem.GetId()] = module
+            else:
+                export.Enable(menuitem.GetId(), False)
         file.AppendSubMenu(export, 'Export')
         file.AppendSeparator()
 

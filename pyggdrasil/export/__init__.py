@@ -1,7 +1,17 @@
-from . import svg, png
+ALL = []
 
 
-ALL = [svg, png]
+try:
+    import svg
+    ALL.append((svg, True))
+except ImportError:
+    ALL.append(('svg', False))
+
+try:
+    import png
+    ALL.append((png, True))
+except ImportError:
+    ALL.append(('png', False))
 
 
 def name(module):
@@ -14,5 +24,7 @@ def name(module):
 def extension(module):
     if hasattr(module, 'EXTENSION'):
         return module.EXTENSION
-    else:
+    elif hasattr(module, '__name__'):
         return module.__name__.rpartition('.')[2]
+    else:
+        return str(module)
