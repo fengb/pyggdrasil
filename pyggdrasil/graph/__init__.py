@@ -36,7 +36,6 @@ class Graph(object):
 
     Fields:
         normalized
-        scaled
         width
         height
         radius
@@ -44,14 +43,10 @@ class Graph(object):
         arrowlength
         arrowwidth
     """
-    def __init__(self, rawgraph, normalize=True, scale=True,
+    def __init__(self, rawgraph, normalize=True,
                  radius=0.5, padding=0.0,
                  arrowlength=None, arrowwidth=None):
-        """If scale is false, node positions will not shift based upon radius
-        and padding.
-        """
         self.normalized = normalize
-        self.scaled = scale
         self.radius = radius
         self.padding = padding
         self.arrowlength = arrowlength or padding
@@ -59,15 +54,12 @@ class Graph(object):
 
         scalar = 2 * (radius + padding)
 
-        if scale:
-            cached = [(node, pos*scalar) for (node, pos) in rawgraph]
-        else:
-            cached = list(rawgraph)
+        cached = [(node, _round(pos*self._scalar(), 10)) for (node, pos) in rawgraph]
 
-        xmin = min(pos.real for (node, pos) in cached) - 0.5*scalar
-        xmax = max(pos.real for (node, pos) in cached) + 0.5*scalar
-        ymin = min(pos.imag for (node, pos) in cached) - 0.5*scalar
-        ymax = max(pos.imag for (node, pos) in cached) + 0.5*scalar
+        xmin = min(pos.real for (node, pos) in cached) - 0.5*self._scalar()
+        xmax = max(pos.real for (node, pos) in cached) + 0.5*self._scalar()
+        ymin = min(pos.imag for (node, pos) in cached) - 0.5*self._scalar()
+        ymax = max(pos.imag for (node, pos) in cached) + 0.5*self._scalar()
 
         self.width = xmax - xmin
         self.height = ymax - ymin
@@ -78,6 +70,9 @@ class Graph(object):
         else:
             self._nodespos = dict(cached)
 
+    def _scalar(self):
+        return 2.0 * (self.radius + self.padding)
+
     def __in__(self, key):
         return key in self._nodespos
 
@@ -85,9 +80,10 @@ class Graph(object):
         return iter(self._nodespos)
 
     def raw(self):
-        """Return RawGraph equivalent of the Graph."""
+        """Return RawGraph equivalent of the Graph.
+        """
         for node in self:
-            yield (node, self.pos(node))
+            yield (node, self.pos(node) / self._scalar())
 
     def pos(self, node):
         """Return the draw position of the node."""
@@ -126,23 +122,29 @@ class Graph(object):
 
 
 def transition(startgraph, endgraph, endweight):
+    startraw = dict(startgraph.raw())
+    endraw = dict(endgraph.raw())
     startweight = 1 - endweight
 
     nodespos = []
-    nodes = set(startgraph) | set(endgraph)
+    nodes = set(startraw) | set(endraw)
     for node in nodes:
-        startpos = _ancestorpos(startgraph, node)
-        endpos = _ancestorpos(endgraph, node)
+        startpos = _ancestorpos(startraw, node)
+        endpos = _ancestorpos(endraw, node)
         pos = startpos*startweight + endpos*endweight
 
         nodespos.append((node, pos))
 
-    return Graph(nodespos, scale=False,
+    return Graph(nodespos,
                  radius=endgraph.radius, padding=endgraph.padding,
                  arrowwidth=endgraph.arrowwidth, arrowlength=endgraph.arrowlength)
 
 
-def _ancestorpos(graph, node):
-    while node not in graph:
+def _ancestorpos(d, node):
+    while node not in d:
         node = node.parent
-    return graph.pos(node)
+    return d[node]
+
+
+def _round(c, precision):
+    return complex(round(c.real, precision), round(c.imag, precision))

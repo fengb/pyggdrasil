@@ -33,10 +33,3 @@ class TestGraph(object):
         basepos = dict(self.rawgraph)
         for node in self.unnormalized:
             assert self.unnormalized.pos(node) == basepos[node]
-
-    def test_unscaled_unnormalized_positions_same_as_target(self):
-        target = graph.Graph(self.graph.raw(), scale=False, normalize=False,
-                             radius=281, padding=48)
-        for node in target:
-            assert target.pos(node) == self.graph.pos(node)
-
