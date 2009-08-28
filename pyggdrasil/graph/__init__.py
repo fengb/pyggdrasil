@@ -140,8 +140,8 @@ class Graph(object):
         Also scales radius, padding, width, and height.
         """
         return Graph(self.raw(),
-                     radius=self.radius * value, padding=self.padding * value,
-                     arrowwidth=self.arrowwidth, arrowlength=self.arrowlength)
+                     radius=self.radius*value, padding=self.padding*value,
+                     arrowwidth=self.arrowwidth*value, arrowlength=self.arrowlength*value)
 
 
 def transition(startgraph, endgraph, endweight):
