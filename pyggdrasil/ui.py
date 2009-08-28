@@ -219,19 +219,13 @@ class Graph(wx.ScrolledWindow):
             if self._drawgraph.hasline(node):
                 spos = self._drawgraph.linestart(node)
                 epos = self._drawgraph.lineend(node)
-                direction = self._drawgraph.linedir(node)
 
                 # Relational line
                 lines.append((spos.real, spos.imag, epos.real, epos.imag))
 
                 # Little arrow at the end
-                # Base arrowhead is horizontal (looks like >)
-                pos1 = -self._drawgraph.arrowlength - 1j*self._drawgraph.arrowwidth/2.0
-                pos1 = (pos1 * cmath.exp(1j*direction)) + epos
-                pos2 = -self._drawgraph.arrowlength + 1j*self._drawgraph.arrowwidth/2.0
-                pos2 = (pos2 * cmath.exp(1j*direction)) + epos
-                polygons.append([(epos.real, epos.imag),
-                                 (pos1.real, pos1.imag), (pos2.real, pos2.imag)])
+                polygons.append([(pos.real, pos.imag)
+                                     for pos in self._drawgraph.arrowpoints(node)])
 
         if lines:
             dc.DrawLineList(lines)

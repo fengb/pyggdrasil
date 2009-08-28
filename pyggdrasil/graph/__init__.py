@@ -40,8 +40,10 @@ class Graph(object):
         height
         radius
         padding
+
         arrowlength
         arrowwidth
+        arrowpoints
     """
     def __init__(self, rawgraph, normalize=True,
                  radius=0.5, padding=0.0,
@@ -51,6 +53,12 @@ class Graph(object):
         self.padding = padding
         self.arrowlength = arrowlength or padding
         self.arrowwidth = arrowwidth or padding
+
+        self._basearrowpoints = [
+            0j,
+            -arrowlength + 1j*arrowwidth/2.0,
+            -arrowlength - 1j*arrowwidth/2.0,
+        ]
 
         scalar = 2 * (radius + padding)
 
@@ -116,6 +124,13 @@ class Graph(object):
             return self.pos(node.parent) - self._lineoffset(node)
         except TypeError:
             return None
+
+    def arrowpoints(self, node):
+        """Return the points for the arrow."""
+        direction = 1j * self.linedir(node)
+        offset = self.lineend(node)
+        return [pos * cmath.exp(direction) + offset
+                    for pos in self._basearrowpoints]
 
     def _lineoffset(self, node):
         return self.radius * cmath.exp(self.linedir(node) * 1j)
