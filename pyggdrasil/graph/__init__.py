@@ -120,6 +120,14 @@ class Graph(object):
     def _lineoffset(self, node):
         return self.radius * cmath.exp(self.linedir(node) * 1j)
 
+    def scale(self, value):
+        """Multiply each position by value.
+        Also scales radius, padding, width, and height.
+        """
+        return Graph(self.raw(),
+                     radius=self.radius * value, padding=self.padding * value,
+                     arrowwidth=self.arrowwidth, arrowlength=self.arrowlength)
+
 
 def transition(startgraph, endgraph, endweight):
     startraw = dict(startgraph.raw())

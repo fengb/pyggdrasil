@@ -1,6 +1,13 @@
 from pyggdrasil import graph
 
 
+THRESHOLD = 1e-8
+
+
+def assert_floats(first, second):
+    assert abs(first - second) < THRESHOLD
+
+
 class TestGraph(object):
     def setup_method(self, method):
         self.xmin = -28.0
@@ -33,3 +40,15 @@ class TestGraph(object):
         basepos = dict(self.rawgraph)
         for node in self.unnormalized:
             assert self.unnormalized.pos(node) == basepos[node]
+
+    def test_scale(self):
+        value = 3.14
+        scaled = self.graph.scale(value)
+
+        assert_floats(scaled.width, self.graph.width * value)
+        assert_floats(scaled.height, self.graph.height * value)
+        assert_floats(scaled.radius, self.graph.radius * value)
+        assert_floats(scaled.padding, self.graph.padding * value)
+        for node in scaled:
+            assert_floats(scaled.pos(node), self.graph.pos(node) * value)
+
