@@ -1,7 +1,7 @@
-from . import svg
+from . import svg, png
 
 
-ALL = [svg]
+ALL = [svg, png]
 
 
 def name(module):
