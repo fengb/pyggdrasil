@@ -38,7 +38,7 @@ class Main(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnSaveAs, saveas)
         file.AppendSeparator()
 
-        self._exports = pyggdrasil.model.EqualsDict()
+        self._exports = {}
         export = wx.Menu()
         for (module, available) in pyggdrasil.export.ALL:
             menuitem = export.Append(wx.ID_ANY, pyggdrasil.export.name(module))
@@ -459,7 +459,7 @@ class Config(wx.Panel):
         sizer.AddGrowableCol(1, 1)
 
         # TODO: Move config fields to graph
-        self._keys = pyggdrasil.model.EqualsDict()
+        self._keys = {}
         self._inputs = {}
         for (name, default) in [('Radius', 40), ('Padding', 5),
                                 ('Arrow Width', 5), ('Arrow Length', 5)]:
