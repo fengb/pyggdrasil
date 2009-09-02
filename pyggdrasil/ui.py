@@ -3,10 +3,16 @@ import wx.lib.newevent
 
 import pyggdrasil
 
+try:
+    from multiprocessing import Process
+except ImportError:
+    from threading import Thread as Process
+
 
 TreeChangedEvent, TREE_CHANGED_EVENT = wx.lib.newevent.NewEvent()
 GraphSelectedEvent, GRAPH_SELECTED_EVENT = wx.lib.newevent.NewEvent()
 ConfigChangedEvent, CONFIG_CHANGED_EVENT = wx.lib.newevent.NewEvent()
+FileSavedEvent, FILE_SAVED_EVENT = wx.lib.newevent.NewEvent()
 
 
 class Main(wx.Frame):
@@ -122,6 +128,7 @@ class Main(wx.Frame):
             file.close()
 
     def OnExport(self, event):
+        # TODO: Extract to separate class with OnExportFinished
         module = self._exports[event.GetId()]
         name = pyggdrasil.export.name(module)
         extension = pyggdrasil.export.extension(module)
@@ -130,7 +137,19 @@ class Main(wx.Frame):
         if filename:
             if '.' not in filename:
                 filename += '.' + extension
-            module.export(self._graph.graph, filename)
+            def func():
+                module.export(self._graph.graph, filename)
+                wx.PostEvent(self, FileSavedEvent())
+            self._exportprocess = Process(target=func)
+            self._exportdialog = wx.ProgressDialog('Exporting...', 'Exporting...', parent=self,
+                                                   style=(wx.PD_APP_MODAL | wx.PD_SMOOTH | wx.PD_AUTO_HIDE | wx.STAY_ON_TOP))
+            self.Bind(FILE_SAVED_EVENT, self.OnExportFinished)
+            self._exportprocess.start()
+
+    def OnExportFinished(self, event):
+        # TODO: Extract to separate class with OnExport
+        self._exportdialog.Update(100)
+        self.Unbind(FILE_SAVED_EVENT)
 
     def OnClose(self, event):
         self.Close()
