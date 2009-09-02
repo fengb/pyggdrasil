@@ -30,7 +30,7 @@ class Main(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnOpen, open)
         file.AppendSeparator()
 
-        close = file.Append(wx.ID_CLOSE, 'Close\tCtrl-W')
+        close = file.Append(wx.ID_CLOSE, '&Close Window\tCtrl-W')
         self.Bind(wx.EVT_MENU, self.OnClose, close)
         save = file.Append(wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.OnSave, save)
@@ -47,11 +47,33 @@ class Main(wx.Frame):
                 self._exports[menuitem.GetId()] = module
             else:
                 export.Enable(menuitem.GetId(), False)
-        file.AppendSubMenu(export, 'Export')
+        file.AppendSubMenu(export, '&Export')
         file.AppendSeparator()
 
         file.Append(wx.ID_EXIT)
         menubar.Append(file, '&File')
+
+        edit = wx.Menu()
+        undo = edit.Append(wx.ID_UNDO, '&Undo\tCtrl-Z')
+        edit.Enable(undo.GetId(), False)
+        redo = edit.Append(wx.ID_REDO, '&Redo\tShift-Ctrl-Z')
+        edit.Enable(redo.GetId(), False)
+        edit.AppendSeparator()
+
+        cut = edit.Append(wx.ID_CUT)
+        edit.Enable(cut.GetId(), False)
+        copy = edit.Append(wx.ID_COPY)
+        edit.Enable(copy.GetId(), False)
+        paste = edit.Append(wx.ID_PASTE)
+        edit.Enable(paste.GetId(), False)
+        pastefrom = edit.Append(wx.ID_ANY, 'Paste From...')
+        edit.Enable(pastefrom.GetId(), False)
+        edit.AppendSeparator()
+
+        edit.Append(wx.ID_DELETE, 'Delete\tCtrl-K')
+        rename = edit.Append(wx.ID_ANY, 'Rename\tF2')
+        self.Bind(wx.EVT_MENU, self.OnRename, rename)
+        menubar.Append(edit, '&Edit')
 
         return menubar
 
@@ -146,6 +168,9 @@ class Main(wx.Frame):
 
     def OnGraphSelected(self, event):
         self._tree.selected = event.target
+
+    def OnRename(self, event):
+        self._tree.Rename()
 
 
 class Graph(wx.ScrolledWindow):
@@ -322,6 +347,9 @@ class Tree(wx.Panel):
     @property
     def sort(self):
         return self._sort.IsChecked()
+
+    def Rename(self):
+        self._tree.EditLabel(self._tree.GetSelection())
 
     def Reload(self):
         self._tree.DeleteAllItems()
