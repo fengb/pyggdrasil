@@ -14,6 +14,13 @@ except ImportError:
     ALL.append(('png', False))
 
 
+def run(module, graph, filename, progresscallback=None):
+    if not progresscallback:
+        def updatefunc(value):
+            pass
+    module.export(graph, filename, progresscallback)
+
+
 def name(module):
     if hasattr(module, 'NAME'):
         return module.NAME

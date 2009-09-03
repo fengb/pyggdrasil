@@ -6,7 +6,7 @@ import PIL.ImageDraw
 SCALE = 8
 
 
-def export(graph, filename):
+def export(graph, filename, progresscallback):
     # Upscaling draw for anti-aliased downscale
     scaledgraph = graph.scale(SCALE)
 
@@ -40,8 +40,10 @@ def export(graph, filename):
             draw.ellipse((x1, y1, x2, y2),
                          outline='#000000', fill='#FFFFFF')
 
+    progresscallback(0.2)
     image = image.resize((int(scaledgraph.width / SCALE), int(scaledgraph.height / SCALE)),
                          PIL.Image.ANTIALIAS)
+    progresscallback(0.9)
 
     draw = PIL.ImageDraw.Draw(image)
     for node in graph:
@@ -53,3 +55,4 @@ def export(graph, filename):
         draw.text((x, y), node.id)
 
     image.save(filename)
+    progresscallback(1.0)

@@ -1,12 +1,20 @@
+import functools
+
 import wx
 import wx.lib.newevent
 
 import pyggdrasil
 
+try:
+    from multiprocessing import Process
+except ImportError:
+    from threading import Thread as Process
+
 
 TreeChangedEvent, TREE_CHANGED_EVENT = wx.lib.newevent.NewEvent()
 GraphSelectedEvent, GRAPH_SELECTED_EVENT = wx.lib.newevent.NewEvent()
 ConfigChangedEvent, CONFIG_CHANGED_EVENT = wx.lib.newevent.NewEvent()
+ProgressUpdatedEvent, PROGRESS_UPDATED_EVENT = wx.lib.newevent.NewEvent()
 
 
 class Main(wx.Frame):
@@ -152,7 +160,10 @@ class Main(wx.Frame):
         if filename:
             if '.' not in filename:
                 filename += '.' + extension
-            module.export(self._graph.graph, filename)
+            func = functools.partial(pyggdrasil.export.run,
+                                     module, self._graph.graph, filename)
+            progress = Progress(func, parent=self, title='Export',
+                                message=''.join(['Exporting ', name, '...']))
 
     def OnClose(self, event):
         self.Close()
@@ -171,6 +182,24 @@ class Main(wx.Frame):
 
     def OnRename(self, event):
         self._tree.Rename()
+
+
+class Progress(wx.EvtHandler):
+    def __init__(self, func, title, message, parent, *args, **kwargs):
+        wx.EvtHandler.__init__(self, *args, **kwargs)
+        self._dialog = wx.ProgressDialog(title, message, parent=parent, style=wx.PD_AUTO_HIDE | wx.PD_SMOOTH)
+        def newfunc():
+            func(self.callback)
+        self.Bind(PROGRESS_UPDATED_EVENT, self.OnProgress)
+        process = Process(target=newfunc)
+        process.start()
+
+    def callback(self, value):
+        # Callback is for fixing thread problems
+        wx.PostEvent(self, ProgressUpdatedEvent(value=value*100))
+
+    def OnProgress(self, event):
+        self._dialog.Update(event.value)
 
 
 class Graph(wx.ScrolledWindow):
