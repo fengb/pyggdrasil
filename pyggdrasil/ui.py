@@ -1,3 +1,5 @@
+import functools
+
 import wx
 import wx.lib.newevent
 
@@ -12,7 +14,7 @@ except ImportError:
 TreeChangedEvent, TREE_CHANGED_EVENT = wx.lib.newevent.NewEvent()
 GraphSelectedEvent, GRAPH_SELECTED_EVENT = wx.lib.newevent.NewEvent()
 ConfigChangedEvent, CONFIG_CHANGED_EVENT = wx.lib.newevent.NewEvent()
-FileSavedEvent, FILE_SAVED_EVENT = wx.lib.newevent.NewEvent()
+ProgressUpdatedEvent, PROGRESS_UPDATED_EVENT = wx.lib.newevent.NewEvent()
 
 
 class Main(wx.Frame):
@@ -128,7 +130,6 @@ class Main(wx.Frame):
             file.close()
 
     def OnExport(self, event):
-        # TODO: Extract to separate class with OnExportFinished
         module = self._exports[event.GetId()]
         name = pyggdrasil.export.name(module)
         extension = pyggdrasil.export.extension(module)
@@ -137,19 +138,10 @@ class Main(wx.Frame):
         if filename:
             if '.' not in filename:
                 filename += '.' + extension
-            def func():
-                module.export(self._graph.graph, filename)
-                wx.PostEvent(self, FileSavedEvent())
-            self._exportprocess = Process(target=func)
-            self._exportdialog = wx.ProgressDialog('Exporting...', 'Exporting...', parent=self,
-                                                   style=(wx.PD_APP_MODAL | wx.PD_SMOOTH | wx.PD_AUTO_HIDE | wx.STAY_ON_TOP))
-            self.Bind(FILE_SAVED_EVENT, self.OnExportFinished)
-            self._exportprocess.start()
-
-    def OnExportFinished(self, event):
-        # TODO: Extract to separate class with OnExport
-        self._exportdialog.Update(100)
-        self.Unbind(FILE_SAVED_EVENT)
+            func = functools.partial(pyggdrasil.export.run,
+                                     module, self._graph.graph, filename)
+            progress = Progress(func, parent=self, title='Export',
+                                message=''.join(['Exporting ', name, '...']))
 
     def OnClose(self, event):
         self.Close()
@@ -165,6 +157,24 @@ class Main(wx.Frame):
 
     def OnGraphSelected(self, event):
         self._tree.selected = event.target
+
+
+class Progress(wx.EvtHandler):
+    def __init__(self, func, title, message, parent, *args, **kwargs):
+        wx.EvtHandler.__init__(self, *args, **kwargs)
+        self._dialog = wx.ProgressDialog(title, message, parent=parent, style=wx.PD_AUTO_HIDE | wx.PD_SMOOTH)
+        def newfunc():
+            func(self.callback)
+        self.Bind(PROGRESS_UPDATED_EVENT, self.OnProgress)
+        process = Process(target=newfunc)
+        process.start()
+
+    def callback(self, value):
+        # Callback is for fixing thread problems
+        wx.PostEvent(self, ProgressUpdatedEvent(value=value*100))
+
+    def OnProgress(self, event):
+        self._dialog.Update(event.value)
 
 
 class Graph(wx.ScrolledWindow):

@@ -6,7 +6,7 @@ except ImportError:
     import elementtree.ElementTree as et
 
 
-def export(graph, filename):
+def export(graph, filename, progresscallback):
     root = et.Element('svg', {
         'xmlns': 'http://www.w3.org/2000/svg',
         'width': str(graph.width), 'height': str(graph.height),
@@ -56,5 +56,6 @@ def export(graph, filename):
     file = open(filename, 'w')
     try:
         file.write(et.tostring(root))
+        progresscallback(1.0)
     finally:
         file.close()
