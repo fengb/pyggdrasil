@@ -1,11 +1,10 @@
 """
 RawGraph - any iterable with the following requirements:
     1. Each item must be a (node, position) pair.
-    2. The first node must be the root.
-    3. Every position is given as complex(x, y) to simplify calculations.
-    4. A position may also be None, which means do not draw. An 'empty'
+    2. Every position is given as complex(x, y) to simplify calculations.
+    3. A position may also be None, which means do not draw. An 'empty'
        comparison should use "is None" since complex(0, 0) is valid.
-    5. Every node is assumed to be size (1, 1).
+    4. Every node is assumed to be size (1, 1).
 """
 
 
