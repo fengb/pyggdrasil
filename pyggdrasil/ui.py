@@ -432,7 +432,7 @@ class Tree(wx.Panel):
             event.Veto()
             return
 
-        item = self._tree.GetSelection()
+        item = event.GetItem()
         self.nodes[item].id = str(nodeid)
 
         wx.PostEvent(self, TreeChangedEvent())
