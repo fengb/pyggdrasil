@@ -343,15 +343,9 @@ class Tree(wx.Panel):
     def _buttoncontrols(self):
         sizer = wx.GridSizer(rows=0, cols=2)
 
-        self._childinput = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
-        self._childinput.Bind(wx.EVT_TEXT_ENTER, self.OnAdd)
-        sizer.Add(self._childinput, 1, wx.EXPAND)
-
         add = wx.Button(self, wx.ID_ADD, 'Add Child')
         add.Bind(wx.EVT_BUTTON, self.OnAdd)
         sizer.Add(add, 1, wx.EXPAND)
-
-        sizer.AddStretchSpacer()
 
         remove = wx.Button(self, wx.ID_REMOVE)
         remove.Bind(wx.EVT_BUTTON, self.OnRemove)
@@ -444,21 +438,16 @@ class Tree(wx.Panel):
         wx.PostEvent(self, TreeChangedEvent())
 
     def OnAdd(self, event):
-        nodeid = self._childinput.GetValue()
-        if not nodeid:
-            return
+        nodeid = 'New'
 
         parent = self._tree.GetSelection()
         node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[parent])
 
         item = self._tree.AppendItem(parent, nodeid)
         self.nodes[item] = node
-        self._tree.Expand(parent)
-
-        self._childinput.Clear()
-
-        if self.sort:
-            self._sorttree(parent)
+        self._tree.EnsureVisible(item)
+        self._tree.EditLabel(item)
+        self._additem = True
 
         wx.PostEvent(self, TreeChangedEvent())
 
