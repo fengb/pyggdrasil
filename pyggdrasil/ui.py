@@ -376,7 +376,8 @@ class Tree(wx.Panel):
 
         item = self._tree.AppendItem(parent, nodeid)
         self.nodes[item] = node
-        self._tree.EnsureVisible(item)
+        self._tree.Collapse(parent)
+        self._tree.Expand(parent)
         self._tree.EditLabel(item)
 
         wx.PostEvent(self, TreeChangedEvent())
