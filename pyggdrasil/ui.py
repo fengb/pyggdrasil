@@ -78,9 +78,12 @@ class Main(wx.Frame):
         edit.Enable(pastefrom.GetId(), False)
         edit.AppendSeparator()
 
-        edit.Append(wx.ID_DELETE, 'Delete\tCtrl-K')
-        rename = edit.Append(wx.ID_ANY, 'Rename\tF2')
+        add = edit.Append(wx.ID_ANY, '&Insert Child\tCtrl-I')
+        self.Bind(wx.EVT_MENU, self.OnAdd, add)
+        rename = edit.Append(wx.ID_ANY, 'Rename Selected\tF2')
         self.Bind(wx.EVT_MENU, self.OnRename, rename)
+        delete = edit.Append(wx.ID_DELETE, '&Delete Selected\tCtrl-K')
+        self.Bind(wx.EVT_MENU, self.OnDelete, delete)
         menubar.Append(edit, '&Edit')
 
         return menubar
@@ -180,8 +183,14 @@ class Main(wx.Frame):
     def OnGraphSelected(self, event):
         self._tree.selected = event.target
 
+    def OnAdd(self, event):
+        self._tree.AddChild()
+
     def OnRename(self, event):
-        self._tree.Rename()
+        self._tree.RenameSelected()
+
+    def OnDelete(self, event):
+        self._tree.RemoveSelected()
 
 
 class Progress(wx.EvtHandler):
@@ -264,7 +273,6 @@ class Graph(wx.ScrolledWindow):
         self.PrepareDC(dc)
         dc.BeginDrawing()
 
-        # TODO: Make this less crazy
         if dc.GetBackground().GetColour() == (0, 0, 0, 255):
             dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
         dc.Clear()
@@ -343,17 +351,6 @@ class Tree(wx.Panel):
     def _buttoncontrols(self):
         sizer = wx.GridSizer(rows=0, cols=2)
 
-        add = wx.Button(self, wx.ID_ADD, 'Add Child')
-        add.Bind(wx.EVT_BUTTON, self.OnAdd)
-        sizer.Add(add, 1, wx.EXPAND)
-
-        remove = wx.Button(self, wx.ID_REMOVE)
-        remove.Bind(wx.EVT_BUTTON, self.OnRemove)
-        sizer.Add(remove, 1, wx.EXPAND)
-
-        sizer.AddStretchSpacer()
-        sizer.AddStretchSpacer()
-
         self._sort = wx.CheckBox(self, wx.ID_ANY, 'Sort')
         self._sort.Bind(wx.EVT_CHECKBOX, self.OnSort)
         sizer.Add(self._sort)
@@ -371,7 +368,33 @@ class Tree(wx.Panel):
     def sort(self):
         return self._sort.IsChecked()
 
-    def Rename(self):
+    def AddChild(self):
+        nodeid = 'New'
+
+        parent = self._tree.GetSelection()
+        node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[parent])
+
+        item = self._tree.AppendItem(parent, nodeid)
+        self.nodes[item] = node
+        self._tree.EnsureVisible(item)
+        self._tree.EditLabel(item)
+
+        wx.PostEvent(self, TreeChangedEvent())
+
+    def RemoveSelected(self):
+        #TODO: Deal with children somehow
+        item = self._tree.GetSelection()
+        if not self.nodes[item].parent:
+            return
+
+        node = self.nodes[item]
+        node.parent.children.remove(node)
+        del self.nodes[item]
+        self._tree.Delete(item)
+
+        wx.PostEvent(self, TreeChangedEvent())
+
+    def RenameSelected(self):
         self._tree.EditLabel(self._tree.GetSelection())
 
     def Reload(self):
@@ -434,33 +457,6 @@ class Tree(wx.Panel):
 
         item = event.GetItem()
         self.nodes[item].id = str(nodeid)
-
-        wx.PostEvent(self, TreeChangedEvent())
-
-    def OnAdd(self, event):
-        nodeid = 'New'
-
-        parent = self._tree.GetSelection()
-        node = pyggdrasil.model.Node(str(nodeid), None, self.nodes[parent])
-
-        item = self._tree.AppendItem(parent, nodeid)
-        self.nodes[item] = node
-        self._tree.EnsureVisible(item)
-        self._tree.EditLabel(item)
-        self._additem = True
-
-        wx.PostEvent(self, TreeChangedEvent())
-
-    def OnRemove(self, event):
-        #TODO: Deal with children somehow
-        item = self._tree.GetSelection()
-        if not self.nodes[item].parent:
-            return
-
-        node = self.nodes[item]
-        node.parent.children.remove(node)
-        del self.nodes[item]
-        self._tree.Delete(item)
 
         wx.PostEvent(self, TreeChangedEvent())
 
