@@ -16,7 +16,7 @@ def dump(stream, *args, **kwargs):
     yaml.dump(raw, stream=stream)
 
 
-def toraw(root, graphoptions):
+def toraw(root, options):
     ids = {}
     usedids = set()
     for node in root.unroll():
@@ -33,7 +33,7 @@ def toraw(root, graphoptions):
     return {
         'data': dict((ids[node], node.data) for node in root.unroll()),
         'structure': _tostructure(root, ids),
-        'graph': graphoptions,
+        'options': options,
     }
 
 def _tostructure(node, ids):
@@ -41,7 +41,8 @@ def _tostructure(node, ids):
 
 
 def fromraw(raw):
-    return _fromstructure(raw['structure'], raw['data']), raw['graph']
+    root = _fromstructure(raw['structure'], raw['data'])
+    return root, raw['options']
 
 
 def _fromstructure(structure, data, parent=None):

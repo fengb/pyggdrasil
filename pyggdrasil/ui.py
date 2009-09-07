@@ -18,11 +18,11 @@ ProgressUpdatedEvent, PROGRESS_UPDATED_EVENT = wx.lib.newevent.NewEvent()
 
 
 class Main(wx.Frame):
-    def __init__(self, root=None, graphoptions=None, filename=None, *args, **kwargs):
+    def __init__(self, root=None, options=None, filename=None, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
 
         self.root = root or pyggdrasil.model.Node('root', None)
-        self.graphoptions = graphoptions or {}
+        self.options = options or {}
         self.filename = filename
 
         self.SetMenuBar(self._createmenubar())
@@ -93,18 +93,18 @@ class Main(wx.Frame):
 
         notebook = wx.Notebook(self, id=wx.ID_ANY)
 
-        self._tree = Tree(self.root, parent=notebook)
+        self._tree = Tree(self.root, self.options, parent=notebook)
         self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
         self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
         notebook.AddPage(self._tree, 'Tree')
 
-        self._config = Config(self.graphoptions, parent=notebook)
+        self._config = Config(self.options, parent=notebook)
         self._config.Bind(CONFIG_CHANGED_EVENT, self.OnConfigChange)
         notebook.AddPage(self._config, 'Config')
 
         sizer.Add(notebook, 0, wx.EXPAND)
 
-        self._graph = Graph(self.root, self.graphoptions, parent=self)
+        self._graph = Graph(self.root, self.options, parent=self)
         self._graph.Bind(GRAPH_SELECTED_EVENT, self.OnGraphSelected)
         sizer.Add(self._graph, 1, wx.EXPAND)
 
@@ -126,8 +126,8 @@ class Main(wx.Frame):
         if filename:
             file = open(filename)
             try:
-                root, graphoptions = pyggdrasil.serialize.load(file)
-                frame = Main(root, graphoptions, filename,
+                root, options = pyggdrasil.serialize.load(file)
+                frame = Main(root, options, filename,
                              self.GetParent(), wx.ID_ANY)
                 frame.Show(True)
             finally:
@@ -150,7 +150,7 @@ class Main(wx.Frame):
     def _save(self):
         file = open(self.filename, 'w')
         try:
-            pyggdrasil.serialize.dump(file, self.root, self._config.graphoptions)
+            pyggdrasil.serialize.dump(file, self.root, self._config.options)
         finally:
             file.close()
 
@@ -175,6 +175,7 @@ class Main(wx.Frame):
         self._graph.Reload()
 
     def OnConfigChange(self, event):
+        self._tree.ReloadOptions()
         self._graph.Reload()
 
     def OnTreeSelected(self, event):
@@ -212,10 +213,10 @@ class Progress(wx.EvtHandler):
 
 
 class Graph(wx.ScrolledWindow):
-    def __init__(self, root, graphoptions, *args, **kwargs):
+    def __init__(self, root, options, *args, **kwargs):
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
 
-        self.graphoptions = graphoptions
+        self.options = options
         self.selected = root
 
         self._drawtimer = wx.Timer(self, wx.ID_ANY)
@@ -240,11 +241,11 @@ class Graph(wx.ScrolledWindow):
         try:
             self._oldgraph = self.graph
         except AttributeError:
-            self.graph = pyggdrasil.graph.generate(self.root, **self.graphoptions)
+            self.graph = pyggdrasil.graph.generate(self.root, **self.options['graph'])
             self._drawgraph = self.graph
             self.SetVirtualSize((self._drawgraph.width, self._drawgraph.height))
         else:
-            self.graph = pyggdrasil.graph.generate(self.root, **self.graphoptions)
+            self.graph = pyggdrasil.graph.generate(self.root, **self.options['graph'])
             self._drawgraph = self._oldgraph
 
             self._drawtimer.Start(15)
@@ -327,7 +328,7 @@ class Graph(wx.ScrolledWindow):
 
 
 class Tree(wx.Panel):
-    def __init__(self, root, *args, **kwargs):
+    def __init__(self, root, options, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -342,7 +343,9 @@ class Tree(wx.Panel):
         self.SetSizer(sizer)
 
         self.root = root
-        self.Reload()
+        self.options = options
+        self.ReloadNodes()
+        self.ReloadOptions()
 
         self.selected = self.root
 
@@ -352,15 +355,6 @@ class Tree(wx.Panel):
         item = self.nodes.getkey(value)
         self._tree.SelectItem(item)
     selected = property(getselected, setselected)
-
-    def getsort(self):
-        return self._sort
-    def setsort(self, value):
-        self._sort = value
-        if self.sort:
-            self._sorttree(self._tree.GetRootItem())
-            wx.PostEvent(self, TreeChangedEvent())
-    sort = property(getsort, setsort)
 
     def AddChild(self):
         nodeid = 'New'
@@ -392,10 +386,13 @@ class Tree(wx.Panel):
     def RenameSelected(self):
         self._tree.EditLabel(self._tree.GetSelection())
 
-    def Reload(self):
+    def ReloadNodes(self):
         self._tree.DeleteAllItems()
         self.nodes = pyggdrasil.model.EqualsDict()
         self._populatenode(self.root)
+
+    def ReloadOptions(self):
+        pass
 
     def _populatenode(self, node, parent=None):
         if parent:
@@ -483,15 +480,17 @@ class Tree(wx.Panel):
 
 
 class Config(wx.Panel):
-    def __init__(self, graphoptions, *args, **kwargs):
+    def __init__(self, options, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
 
-        self.graphoptions = graphoptions
+        self.options = options
 
         sizer = wx.FlexGridSizer(rows=0, cols=2)
         sizer.AddGrowableCol(1, 1)
 
-        # TODO: Move config fields to graph
+        # TODO: Move fields to graph
+        if 'graph' not in self.options:
+            self.options['graph'] = {}
         self._keys = {}
         self._inputs = {}
         for (name, default) in [('Radius', 40), ('Padding', 5),
@@ -503,10 +502,10 @@ class Config(wx.Panel):
             input = wx.TextCtrl(self, wx.ID_ANY)
             self._keys[input.GetId()] = key
             self._inputs[key] = input
-            if key in self.graphoptions:
-                input.SetValue(str(self.graphoptions[key]))
+            if key in self.options['graph']:
+                input.SetValue(str(self.options['graph'][key]))
             else:
-                self.graphoptions[key] = default
+                self.options['graph'][key] = default
                 input.SetValue(str(default))
             input.Bind(wx.EVT_KILL_FOCUS, self.OnChange)
 
@@ -517,7 +516,7 @@ class Config(wx.Panel):
     def OnChange(self, event):
         key = self._keys[event.GetId()]
         try:
-            self.graphoptions[key] = float(self._inputs[key].GetValue())
+            self.options[key] = float(self._inputs[key].GetValue())
             self._inputs[key].SetBackgroundColour('#FFFFFF')
         except ValueError:
             self._inputs[key].SetBackgroundColour('#FF6060')
