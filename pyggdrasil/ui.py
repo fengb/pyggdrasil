@@ -485,10 +485,19 @@ class Config(wx.Panel):
 
         self.options = options
 
-        sizer = wx.FlexGridSizer(rows=0, cols=2)
-        sizer.AddGrowableCol(1, 1)
+        sizer = wx.GridSizer(rows=0, cols=2)
 
-        # TODO: Move fields to graph
+        # TODO: Move config defaults somewhere else
+        if 'tree' not in self.options:
+            self.options['tree'] = {}
+        sort = wx.CheckBox(self, wx.ID_ANY, 'Sort')
+        sizer.Add(sort)
+        sort.Bind(wx.EVT_CHECKBOX, self.OnChange)
+
+        sizer.AddStretchSpacer()
+        sizer.AddStretchSpacer()
+        sizer.AddStretchSpacer()
+
         if 'graph' not in self.options:
             self.options['graph'] = {}
         self._keys = {}
@@ -507,13 +516,16 @@ class Config(wx.Panel):
             else:
                 self.options['graph'][key] = default
                 input.SetValue(str(default))
-            input.Bind(wx.EVT_KILL_FOCUS, self.OnChange)
+            input.Bind(wx.EVT_KILL_FOCUS, self.OnTextInputChange)
 
-            sizer.Add(input, 1, wx.EXPAND)
+            sizer.Add(input)
 
         self.SetSizer(sizer)
 
     def OnChange(self, event):
+        wx.PostEvent(self, ConfigChangedEvent())
+
+    def OnTextInputChange(self, event):
         key = self._keys[event.GetId()]
         try:
             self.options[key] = float(self._inputs[key].GetValue())
