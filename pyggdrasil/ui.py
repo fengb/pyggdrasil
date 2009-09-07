@@ -339,23 +339,12 @@ class Tree(wx.Panel):
         self._tree.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
         sizer.Add(self._tree, 1, wx.EXPAND)
 
-        sizer.Add(self._buttoncontrols())
-
         self.SetSizer(sizer)
 
         self.root = root
         self.Reload()
 
         self.selected = self.root
-
-    def _buttoncontrols(self):
-        sizer = wx.GridSizer(rows=0, cols=2)
-
-        self._sort = wx.CheckBox(self, wx.ID_ANY, 'Sort')
-        self._sort.Bind(wx.EVT_CHECKBOX, self.OnSort)
-        sizer.Add(self._sort)
-
-        return sizer
 
     def getselected(self):
         return self.nodes[self._tree.GetSelection()]
@@ -364,9 +353,14 @@ class Tree(wx.Panel):
         self._tree.SelectItem(item)
     selected = property(getselected, setselected)
 
-    @property
-    def sort(self):
-        return self._sort.IsChecked()
+    def getsort(self):
+        return self._sort
+    def setsort(self, value):
+        self._sort = value
+        if self.sort:
+            self._sorttree(self._tree.GetRootItem())
+            wx.PostEvent(self, TreeChangedEvent())
+    sort = property(getsort, setsort)
 
     def AddChild(self):
         nodeid = 'New'
@@ -445,10 +439,6 @@ class Tree(wx.Panel):
             children.append(child)
             child = self._tree.GetNextSibling(child)
         return children
-
-    def OnSort(self, event):
-        self._sorttree(self._tree.GetRootItem())
-        wx.PostEvent(self, TreeChangedEvent())
 
     def OnRename(self, event):
         nodeid = event.GetLabel()
