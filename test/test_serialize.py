@@ -15,7 +15,7 @@ class TestNode(object):
         self.child1 = pyggdrasil.model.Node('child uno', 'some test', self.root)
         self.child2 = pyggdrasil.model.Node('child duo', 'uber test', self.root)
         self.grandchild1 = pyggdrasil.model.Node('child fool', 'uber test', self.child1)
-        self.graphoptions = {1: 'a', 2: 'b', 3: 'c'}
+        self.graphoptions = pyggdrasil.model.Options()
 
     def test_convert_to_and_from_raw(self):
         raw = pyggdrasil.serialize.toraw(self.root, self.graphoptions)

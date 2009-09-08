@@ -55,8 +55,8 @@ class Graph(object):
 
         self._basearrow_points = [
             0j,
-            -arrow_length + 1j*arrow_width/2.0,
-            -arrow_length - 1j*arrow_width/2.0,
+            -self.arrow_length + 1j*self.arrow_width/2.0,
+            -self.arrow_length - 1j*self.arrow_width/2.0,
         ]
 
         scalar = 2 * (radius + padding)

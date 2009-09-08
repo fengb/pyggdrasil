@@ -41,6 +41,9 @@ class ValidationDict(object):
     def __iter__(self):
         return iter(self._dict)
 
+    def __eq__(self, target):
+        return self.dict == target.dict
+
     @property
     def dict(self):
         dict = {}
