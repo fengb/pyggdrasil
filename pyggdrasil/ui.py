@@ -11,6 +11,25 @@ except ImportError:
     from threading import Thread as Process
 
 
+def createmenuitems(parent, menu, notebook):
+    menuitems = []
+    def OnMenuitemSelected(event):
+        index = menuitems.index(event.GetId())
+        notebook.ChangeSelection(index)
+
+    def OnNotebookPageChanged(event):
+        index = event.GetSelection()
+        menu.Check(menuitems[index], True)
+        notebook.ChangeSelection(event.GetSelection())
+
+    for num in xrange(notebook.GetPageCount()):
+        name = notebook.GetPageText(num)
+        item = menu.AppendRadioItem(wx.ID_ANY, '%s\tCtrl-%d' % (name, num + 1))
+        menuitems.append(item.GetId())
+        parent.Bind(wx.EVT_MENU, OnMenuitemSelected, item)
+    notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnNotebookPageChanged)
+
+
 class Main(wx.Frame):
     def __init__(self, root=None, options=None, filename=None, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
@@ -19,8 +38,8 @@ class Main(wx.Frame):
         self.options = options or pyggdrasil.model.Options()
         self.filename = filename
 
-        self.SetMenuBar(self._createmenubar())
         self.SetSizer(self._createsizer())
+        self.SetMenuBar(self._createmenubar())
 
     def _createmenubar(self):
         menubar = wx.MenuBar()
@@ -81,10 +100,7 @@ class Main(wx.Frame):
         menubar.Append(edit, '&Edit')
 
         view = wx.Menu()
-        self._viewtree = view.AppendRadioItem(wx.ID_ANY, '&Tree\tCtrl-1')
-        self.Bind(wx.EVT_MENU, self.OnViewTree, self._viewtree)
-        self._viewconfig = view.AppendRadioItem(wx.ID_ANY, '&Config\tCtrl-2')
-        self.Bind(wx.EVT_MENU, self.OnViewConfig, self._viewconfig)
+        createmenuitems(self, view, self._notebook)
         menubar.Append(view, '&View')
 
         return menubar
@@ -93,16 +109,15 @@ class Main(wx.Frame):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self._notebook = wx.Notebook(self, id=wx.ID_ANY)
-        self._notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
 
         self._tree = Tree(self.root, self.options, parent=self._notebook)
         self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
         self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
-        self._notebook.AddPage(self._tree, 'Tree')
+        self._notebook.AddPage(self._tree, '&Tree')
 
         self._config = Config(self.options, parent=self._notebook)
         self._config.Bind(CONFIG_CHANGED_EVENT, self.OnConfigChange)
-        self._notebook.AddPage(self._config, 'Config')
+        self._notebook.AddPage(self._config, '&Config')
 
         sizer.Add(self._notebook, 0, wx.EXPAND)
 
@@ -194,21 +209,6 @@ class Main(wx.Frame):
 
     def OnDelete(self, event):
         self._tree.RemoveSelected()
-
-    def OnViewTree(self, event):
-        self._notebook.SetSelection(0)
-
-    def OnViewConfig(self, event):
-        self._notebook.SetSelection(1)
-
-    def OnNotebookPageChanged(self, event):
-        # TODO: Generate menu from notebook directly
-        value = event.GetSelection()
-        if value == 0:
-            self._viewtree.Check()
-        else:
-            self._viewconfig.Check()
-        self._notebook.ChangeSelection(value)
 
 
 ProgressUpdatedEvent, PROGRESS_UPDATED_EVENT = wx.lib.newevent.NewEvent()
