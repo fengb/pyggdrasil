@@ -11,11 +11,6 @@ except ImportError:
     from threading import Thread as Process
 
 
-GraphSelectedEvent, GRAPH_SELECTED_EVENT = wx.lib.newevent.NewEvent()
-ConfigChangedEvent, CONFIG_CHANGED_EVENT = wx.lib.newevent.NewEvent()
-ProgressUpdatedEvent, PROGRESS_UPDATED_EVENT = wx.lib.newevent.NewEvent()
-
-
 class Main(wx.Frame):
     def __init__(self, root=None, options=None, filename=None, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
@@ -217,6 +212,8 @@ class Main(wx.Frame):
         self._notebook.ChangeSelection(value)
 
 
+ProgressUpdatedEvent, PROGRESS_UPDATED_EVENT = wx.lib.newevent.NewEvent()
+
 class Progress(wx.EvtHandler):
     def __init__(self, func, title, message, parent, *args, **kwargs):
         wx.EvtHandler.__init__(self, *args, **kwargs)
@@ -234,6 +231,8 @@ class Progress(wx.EvtHandler):
     def OnProgress(self, event):
         self._dialog.Update(event.value)
 
+
+GraphSelectedEvent, GRAPH_SELECTED_EVENT = wx.lib.newevent.NewEvent()
 
 class Graph(wx.ScrolledWindow):
     def __init__(self, root, options, *args, **kwargs):
@@ -509,6 +508,8 @@ class Tree(wx.Panel):
 
             wx.PostEvent(self, TreeChangedEvent())
 
+
+ConfigChangedEvent, CONFIG_CHANGED_EVENT = wx.lib.newevent.NewEvent()
 
 class Config(wx.Panel):
     # TODO: Make this class less sucktastic
