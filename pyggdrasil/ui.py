@@ -5,10 +5,7 @@ import wx.lib.newevent
 
 import pyggdrasil
 
-try:
-    from multiprocessing import Process
-except ImportError:
-    from threading import Thread as Process
+from threading import Thread
 
 
 def createmenuitems(parent, menu, notebook):
@@ -220,8 +217,8 @@ class Progress(wx.EvtHandler):
         def newfunc():
             func(self.callback)
         self.Bind(PROGRESS_UPDATED_EVENT, self.OnProgress)
-        process = Process(target=newfunc)
-        process.start()
+        thread = Thread(target=newfunc)
+        thread.start()
 
     def callback(self, value):
         # Callback is for fixing thread problems
