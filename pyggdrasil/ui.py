@@ -85,24 +85,32 @@ class Main(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnDelete, delete)
         menubar.Append(edit, '&Edit')
 
+        view = wx.Menu()
+        self._viewtree = view.AppendRadioItem(wx.ID_ANY, '&Tree\tCtrl-1')
+        self.Bind(wx.EVT_MENU, self.OnViewTree, self._viewtree)
+        self._viewconfig = view.AppendRadioItem(wx.ID_ANY, '&Config\tCtrl-2')
+        self.Bind(wx.EVT_MENU, self.OnViewConfig, self._viewconfig)
+        menubar.Append(view, '&View')
+
         return menubar
 
     def _createsizer(self):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        notebook = wx.Notebook(self, id=wx.ID_ANY)
+        self._notebook = wx.Notebook(self, id=wx.ID_ANY)
+        self._notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
 
-        self._config = Config(self.options, parent=notebook)
+        self._config = Config(self.options, parent=self._notebook)
         self._config.Bind(CONFIG_CHANGED_EVENT, self.OnConfigChange)
-        notebook.AddPage(self._config, 'Config')
+        self._notebook.AddPage(self._config, 'Config')
 
-        self._tree = Tree(self.root, self.options, parent=notebook)
+        self._tree = Tree(self.root, self.options, parent=self._notebook)
         self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
         self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
-        notebook.InsertPage(0, self._tree, 'Tree')
-        notebook.SetSelection(0)
+        self._notebook.InsertPage(0, self._tree, 'Tree')
+        self._notebook.ChangeSelection(0)
 
-        sizer.Add(notebook, 0, wx.EXPAND)
+        sizer.Add(self._notebook, 0, wx.EXPAND)
 
         self._graph = Graph(self.root, self.options, parent=self)
         self._graph.Bind(GRAPH_SELECTED_EVENT, self.OnGraphSelected)
@@ -192,6 +200,21 @@ class Main(wx.Frame):
 
     def OnDelete(self, event):
         self._tree.RemoveSelected()
+
+    def OnViewTree(self, event):
+        self._notebook.SetSelection(0)
+
+    def OnViewConfig(self, event):
+        self._notebook.SetSelection(1)
+
+    def OnNotebookPageChanged(self, event):
+        # TODO: Generate menu from notebook directly
+        value = event.GetSelection()
+        if value == 0:
+            self._viewtree.Check()
+        else:
+            self._viewconfig.Check()
+        self._notebook.ChangeSelection(value)
 
 
 class Progress(wx.EvtHandler):
