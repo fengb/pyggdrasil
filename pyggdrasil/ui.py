@@ -11,7 +11,6 @@ except ImportError:
     from threading import Thread as Process
 
 
-TreeChangedEvent, TREE_CHANGED_EVENT = wx.lib.newevent.NewEvent()
 GraphSelectedEvent, GRAPH_SELECTED_EVENT = wx.lib.newevent.NewEvent()
 ConfigChangedEvent, CONFIG_CHANGED_EVENT = wx.lib.newevent.NewEvent()
 ProgressUpdatedEvent, PROGRESS_UPDATED_EVENT = wx.lib.newevent.NewEvent()
@@ -93,14 +92,15 @@ class Main(wx.Frame):
 
         notebook = wx.Notebook(self, id=wx.ID_ANY)
 
-        self._tree = Tree(self.root, self.options, parent=notebook)
-        self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
-        self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
-        notebook.AddPage(self._tree, 'Tree')
-
         self._config = Config(self.options, parent=notebook)
         self._config.Bind(CONFIG_CHANGED_EVENT, self.OnConfigChange)
         notebook.AddPage(self._config, 'Config')
+
+        self._tree = Tree(self.root, self.options, parent=notebook)
+        self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
+        self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
+        notebook.InsertPage(0, self._tree, 'Tree')
+        notebook.SetSelection(0)
 
         sizer.Add(notebook, 0, wx.EXPAND)
 
@@ -327,6 +327,8 @@ class Graph(wx.ScrolledWindow):
                 return
 
 
+TreeChangedEvent, TREE_CHANGED_EVENT = wx.lib.newevent.NewEvent()
+
 class Tree(wx.Panel):
     def __init__(self, root, options, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
@@ -392,7 +394,8 @@ class Tree(wx.Panel):
         self._populatenode(self.root)
 
     def ReloadOptions(self):
-        pass
+        if self.options['tree']['sort']:
+            self._sorttree(self._tree.GetRootItem())
 
     def _populatenode(self, node, parent=None):
         if parent:
@@ -446,6 +449,11 @@ class Tree(wx.Panel):
         item = event.GetItem()
         self.nodes[item].id = str(nodeid)
 
+        if self.options['tree']['sort']:
+            # Triggered version has not renamed before sort
+            self._tree.SetItemText(item, nodeid)
+            self._sorttree(self._tree.GetItemParent(item))
+
         wx.PostEvent(self, TreeChangedEvent())
 
     def OnBeginDrag(self, event):
@@ -473,40 +481,50 @@ class Tree(wx.Panel):
             newitem = self._moveitem(olditem, parent)
             self._tree.SelectItem(newitem)
 
-            if self.sort:
+            if self.options['tree']['sort']:
                 self._sorttree(parent)
 
             wx.PostEvent(self, TreeChangedEvent())
 
 
 class Config(wx.Panel):
+    # TODO: Make this class less sucktastic
     def __init__(self, options, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
 
         self.options = options
 
-        sizer = wx.GridSizer(rows=0, cols=2)
+        sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # TODO: Move config defaults somewhere else
+        grid = wx.GridSizer(rows=0, cols=2)
+
+        self._keys = {}
+        self._inputs = {}
+
         if 'tree' not in self.options:
             self.options['tree'] = {}
         sort = wx.CheckBox(self, wx.ID_ANY, 'Sort')
-        sizer.Add(sort)
-        sort.Bind(wx.EVT_CHECKBOX, self.OnChange)
+        self._keys[sort.GetId()] = 'sort'
+        self._inputs['sort'] = sort
+        if 'sort' in self.options['tree']:
+            sort.SetValue(self.options['tree']['sort'])
+        else:
+            self.options['tree']['sort'] = False
+            sort.SetValue(False)
+        sort.Bind(wx.EVT_CHECKBOX, self.OnCheckboxChange)
+        grid.Add(sort)
 
-        sizer.AddStretchSpacer()
-        sizer.AddStretchSpacer()
-        sizer.AddStretchSpacer()
+        grid.AddStretchSpacer()
+        grid.AddStretchSpacer()
+        grid.AddStretchSpacer()
 
         if 'graph' not in self.options:
             self.options['graph'] = {}
-        self._keys = {}
-        self._inputs = {}
         for (name, default) in [('Radius', 40), ('Padding', 5),
                                 ('Arrow Width', 5), ('Arrow Length', 5)]:
             key = name.replace(' ', '').lower()
             text = wx.StaticText(self, wx.ID_ANY, name)
-            sizer.Add(text)
+            grid.Add(text)
 
             input = wx.TextCtrl(self, wx.ID_ANY)
             self._keys[input.GetId()] = key
@@ -516,19 +534,22 @@ class Config(wx.Panel):
             else:
                 self.options['graph'][key] = default
                 input.SetValue(str(default))
-            input.Bind(wx.EVT_KILL_FOCUS, self.OnTextInputChange)
+            input.Bind(wx.EVT_KILL_FOCUS, self.OnFloatChange)
 
-            sizer.Add(input)
+            grid.Add(input)
 
+        sizer.Add(grid)
         self.SetSizer(sizer)
 
-    def OnChange(self, event):
+    def OnCheckboxChange(self, event):
+        key = self._keys[event.GetId()]
+        self.options['tree'][key] = self._inputs[key].GetValue()
         wx.PostEvent(self, ConfigChangedEvent())
 
-    def OnTextInputChange(self, event):
+    def OnFloatChange(self, event):
         key = self._keys[event.GetId()]
         try:
-            self.options[key] = float(self._inputs[key].GetValue())
+            self.options['graph'][key] = float(self._inputs[key].GetValue())
             self._inputs[key].SetBackgroundColour('#FFFFFF')
         except ValueError:
             self._inputs[key].SetBackgroundColour('#FF6060')
