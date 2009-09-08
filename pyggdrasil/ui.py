@@ -263,11 +263,9 @@ class Graph(wx.ScrolledWindow):
             self._oldgraph = self.graph
         except AttributeError:
             self.graph = pyggdrasil.graph.generate(self.root, **self.options['graph'].dict)
-            self._drawgraph = self.graph
-            self.SetVirtualSize((self._drawgraph.width, self._drawgraph.height))
+            self.SetVirtualSize((self.graph.width, self.graph.height))
         else:
-            self.graph = pyggdrasil.graph.generate(self.root, **self.options['graph'].dict)
-            self._drawgraph = self._oldgraph
+            self._target = pyggdrasil.graph.generate(self.root, **self.options['graph'].dict)
 
             self._drawtimer.Start(15)
             self._timeramount = 0
@@ -281,13 +279,13 @@ class Graph(wx.ScrolledWindow):
         # TODO: Remove hardcode
         self._timeramount += 1
         if self._timeramount < 20:
-            self._drawgraph = pyggdrasil.graph.transition(self._oldgraph, self.graph,
-                                                          self._timeramount / 20.0)
+            self.graph = pyggdrasil.graph.transition(self._oldgraph, self._target,
+                                                     self._timeramount / 20.0)
         else:
             self._drawtimer.Stop()
-            self._drawgraph = self.graph
+            self.graph = self._target
 
-        self.SetVirtualSize((self._drawgraph.width, self._drawgraph.height))
+        self.SetVirtualSize((self.graph.width, self.graph.height))
         self.Refresh()
 
     def OnPaint(self, event):
@@ -301,17 +299,17 @@ class Graph(wx.ScrolledWindow):
 
         lines = []
         polygons = []
-        for node in self._drawgraph:
-            if self._drawgraph.hasline(node):
-                spos = self._drawgraph.linestart(node)
-                epos = self._drawgraph.lineend(node)
+        for node in self.graph:
+            if self.graph.hasline(node):
+                spos = self.graph.linestart(node)
+                epos = self.graph.lineend(node)
 
                 # Relational line
                 lines.append((spos.real, spos.imag, epos.real, epos.imag))
 
                 # Little arrow at the end
                 polygons.append([(pos.real, pos.imag)
-                                     for pos in self._drawgraph.arrow_points(node)])
+                                     for pos in self.graph.arrow_points(node)])
 
         if lines:
             dc.DrawLineList(lines)
@@ -319,7 +317,7 @@ class Graph(wx.ScrolledWindow):
             dc.DrawPolygonList(polygons)
 
         dc.SetBrush(wx.Brush('#FFFFFF'))
-        for node in self._drawgraph:
+        for node in self.graph:
             self._drawnode(node, dc)
 
         if self.selected:
@@ -329,7 +327,7 @@ class Graph(wx.ScrolledWindow):
         dc.EndDrawing()
 
     def _drawnode(self, node, dc):
-        pos = self._drawgraph.pos(node)
+        pos = self.graph.pos(node)
         dc.DrawCircle(pos.real, pos.imag, self.graph.radius)
 
         w, h = dc.GetTextExtent(node.id)
