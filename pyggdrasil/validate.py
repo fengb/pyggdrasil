@@ -3,15 +3,16 @@ class ValidationException(Exception): pass
 
 class ValidationDict(object):
     def __init__(self, directives):
-        self.directives = directives
+        self.directives = dict(directives)
+        self._order = [key for (key, value) in directives]
         self._dict = {}
 
-        for key in directives:
+        for (key, value) in directives:
             # TODO: Remove isinstance
-            if isinstance(directives[key], dict):
-                self._dict[key] = ValidationDict(directives[key])
+            if isinstance(value, list):
+                self._dict[key] = ValidationDict(value)
             else:
-                self._dict[key] = directives[key].default
+                self._dict[key] = value.default
 
     def __setitem__(self, key, value):
         # TODO: Remove isinstance
@@ -39,7 +40,7 @@ class ValidationDict(object):
         return key in self._dict
 
     def __iter__(self):
-        return iter(self._dict)
+        return iter(self._order)
 
     def __eq__(self, target):
         return self.dict == target.dict
