@@ -33,7 +33,7 @@ def toraw(root, options):
     return {
         'data': dict((ids[node], node.data) for node in root.unroll()),
         'structure': _tostructure(root, ids),
-        'options': options,
+        'options': options.dict,
     }
 
 def _tostructure(node, ids):
@@ -42,7 +42,7 @@ def _tostructure(node, ids):
 
 def fromraw(raw):
     root = _fromstructure(raw['structure'], raw['data'])
-    return root, raw['options']
+    return root, pyggdrasil.model.Options(raw['options'])
 
 
 def _fromstructure(structure, data, parent=None):

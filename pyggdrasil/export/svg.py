@@ -16,14 +16,14 @@ def export(graph, filename, progresscallback):
     # Base arrowhead is horizontal (looks like >)
     arrow = et.SubElement(defs, 'marker', {
         'id': 'arrowhead', 
-        'viewBox': '0 0 %s %s' % (graph.arrowlength, graph.arrowwidth),
-        'refX': str(graph.arrowlength), 'refY': str(graph.arrowwidth / 2.0),
+        'viewBox': '0 0 %s %s' % (graph.arrow_length, graph.arrow_width),
+        'refX': str(graph.arrow_length), 'refY': str(graph.arrow_width / 2.0),
         'markerUnits': 'strokeWidth',
-        'markerWidth': str(graph.arrowlength), 'markerHeight': str(graph.arrowwidth),
+        'markerWidth': str(graph.arrow_length), 'markerHeight': str(graph.arrow_width),
         'orient': 'auto',
     })
     et.SubElement(arrow, 'polygon', {
-        'points': '0,0 %s,%s 0,%s' % (graph.arrowlength, graph.arrowwidth / 2.0, graph.arrowwidth),
+        'points': '0,0 %s,%s 0,%s' % (graph.arrow_length, graph.arrow_width / 2.0, graph.arrow_width),
         'fill': 'black', 'stroke': 'black',
     })
 

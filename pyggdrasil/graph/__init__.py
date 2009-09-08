@@ -40,23 +40,23 @@ class Graph(object):
         radius
         padding
 
-        arrowlength
-        arrowwidth
-        arrowpoints
+        arrow_length
+        arrow_width
+        arrow_points
     """
     def __init__(self, rawgraph, normalize=True,
                  radius=0.5, padding=0.0,
-                 arrowlength=None, arrowwidth=None):
+                 arrow_length=None, arrow_width=None):
         self.normalized = normalize
         self.radius = radius
         self.padding = padding
-        self.arrowlength = arrowlength or padding
-        self.arrowwidth = arrowwidth or padding
+        self.arrow_length = arrow_length or padding
+        self.arrow_width = arrow_width or padding
 
-        self._basearrowpoints = [
+        self._basearrow_points = [
             0j,
-            -arrowlength + 1j*arrowwidth/2.0,
-            -arrowlength - 1j*arrowwidth/2.0,
+            -arrow_length + 1j*arrow_width/2.0,
+            -arrow_length - 1j*arrow_width/2.0,
         ]
 
         scalar = 2 * (radius + padding)
@@ -124,12 +124,12 @@ class Graph(object):
         except TypeError:
             return None
 
-    def arrowpoints(self, node):
+    def arrow_points(self, node):
         """Return the points for the arrow."""
         direction = 1j * self.linedir(node)
         offset = self.lineend(node)
         return [pos * cmath.exp(direction) + offset
-                    for pos in self._basearrowpoints]
+                    for pos in self._basearrow_points]
 
     def _lineoffset(self, node):
         return self.radius * cmath.exp(self.linedir(node) * 1j)
@@ -140,7 +140,7 @@ class Graph(object):
         """
         return Graph(self.raw(),
                      radius=self.radius*value, padding=self.padding*value,
-                     arrowwidth=self.arrowwidth*value, arrowlength=self.arrowlength*value)
+                     arrow_width=self.arrow_width*value, arrow_length=self.arrow_length*value)
 
 
 def transition(startgraph, endgraph, endweight):
@@ -159,7 +159,7 @@ def transition(startgraph, endgraph, endweight):
 
     return Graph(nodespos,
                  radius=endgraph.radius, padding=endgraph.padding,
-                 arrowwidth=endgraph.arrowwidth, arrowlength=endgraph.arrowlength)
+                 arrow_width=endgraph.arrow_width, arrow_length=endgraph.arrow_length)
 
 
 def _ancestorpos(d, node):

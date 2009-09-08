@@ -24,7 +24,7 @@ def export(graph, filename, progresscallback):
                       fill='#000000', width=SCALE)
 
             points = [(pos.real, pos.imag)
-                          for pos in scaledgraph.arrowpoints(node)]
+                          for pos in scaledgraph.arrow_points(node)]
             draw.polygon(points, outline='#000000', fill='#000000')
 
     for node in scaledgraph:

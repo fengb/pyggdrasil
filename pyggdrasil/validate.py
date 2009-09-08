@@ -14,10 +14,48 @@ class ValidationDict(object):
                 self._dict[key] = directives[key].default
 
     def __setitem__(self, key, value):
-        self._dict[key] = self.directives[key].validate(value)
+        # TODO: Remove isinstance
+        if isinstance(key, tuple):
+            dict, key = self._target(key)
+            dict[key] = value
+        else:
+            self._dict[key] = self.directives[key].validate(value)
 
     def __getitem__(self, key):
-        return self._dict[key]
+        # TODO: Remove isinstance
+        if isinstance(key, tuple):
+            dict, key = self._target(key)
+            return _dict[key]
+        else:
+            return self._dict[key]
+
+    def _target(self, key):
+        if len(key) == 1:
+            return self, key[0]
+        else:
+            return self[key[0]]._target(key[1:])
+
+    def __contains__(self, key):
+        return key in self._dict
+
+    def __iter__(self):
+        return iter(self._dict)
+
+    @property
+    def dict(self):
+        dict = {}
+        for key in self:
+            if isinstance(self[key], ValidationDict):
+                dict[key] = self[key].dict
+            else:
+                dict[key] = self[key]
+        return dict
+
+    def load(self, dict):
+        for key in dict:
+            # TODO: Remove isinstance
+            if isinstance(self[key], ValidationDict):
+                self[key].load(dict[key])
 
 
 class Float(object):

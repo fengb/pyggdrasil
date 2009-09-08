@@ -16,7 +16,7 @@ class Main(wx.Frame):
         wx.Frame.__init__(self, *args, **kwargs)
 
         self.root = root or pyggdrasil.model.Node('root', None)
-        self.options = options or {}
+        self.options = options or pyggdrasil.model.Options()
         self.filename = filename
 
         self.SetMenuBar(self._createmenubar())
@@ -95,15 +95,14 @@ class Main(wx.Frame):
         self._notebook = wx.Notebook(self, id=wx.ID_ANY)
         self._notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
 
-        self._config = Config(self.options, parent=self._notebook)
-        self._config.Bind(CONFIG_CHANGED_EVENT, self.OnConfigChange)
-        self._notebook.AddPage(self._config, 'Config')
-
         self._tree = Tree(self.root, self.options, parent=self._notebook)
         self._tree.Bind(TREE_CHANGED_EVENT, self.OnTreeChange)
         self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnTreeSelected)
-        self._notebook.InsertPage(0, self._tree, 'Tree')
-        self._notebook.ChangeSelection(0)
+        self._notebook.AddPage(self._tree, 'Tree')
+
+        self._config = Config(self.options, parent=self._notebook)
+        self._config.Bind(CONFIG_CHANGED_EVENT, self.OnConfigChange)
+        self._notebook.AddPage(self._config, 'Config')
 
         sizer.Add(self._notebook, 0, wx.EXPAND)
 
@@ -263,11 +262,11 @@ class Graph(wx.ScrolledWindow):
         try:
             self._oldgraph = self.graph
         except AttributeError:
-            self.graph = pyggdrasil.graph.generate(self.root, **self.options['graph'])
+            self.graph = pyggdrasil.graph.generate(self.root, **self.options['graph'].dict)
             self._drawgraph = self.graph
             self.SetVirtualSize((self._drawgraph.width, self._drawgraph.height))
         else:
-            self.graph = pyggdrasil.graph.generate(self.root, **self.options['graph'])
+            self.graph = pyggdrasil.graph.generate(self.root, **self.options['graph'].dict)
             self._drawgraph = self._oldgraph
 
             self._drawtimer.Start(15)
@@ -312,7 +311,7 @@ class Graph(wx.ScrolledWindow):
 
                 # Little arrow at the end
                 polygons.append([(pos.real, pos.imag)
-                                     for pos in self._drawgraph.arrowpoints(node)])
+                                     for pos in self._drawgraph.arrow_points(node)])
 
         if lines:
             dc.DrawLineList(lines)
@@ -525,57 +524,44 @@ class Config(wx.Panel):
         self._keys = {}
         self._inputs = {}
 
-        if 'tree' not in self.options:
-            self.options['tree'] = {}
-        sort = wx.CheckBox(self, wx.ID_ANY, 'Sort')
-        self._keys[sort.GetId()] = 'sort'
-        self._inputs['sort'] = sort
-        if 'sort' in self.options['tree']:
-            sort.SetValue(self.options['tree']['sort'])
-        else:
-            self.options['tree']['sort'] = False
-            sort.SetValue(False)
-        sort.Bind(wx.EVT_CHECKBOX, self.OnCheckboxChange)
-        grid.Add(sort)
+        for category in self.options:
+            catopts = self.options[category]
+            for field in catopts:
+                name = field.replace('_', ' ').capitalize()
+                # TODO: Remove isinstance
+                if isinstance(catopts[field], bool):
+                    input = wx.CheckBox(self, wx.ID_ANY, name)
+                    self._keys[input.GetId()] = (category, field)
+                    self._inputs[category, field] = input
+                    input.SetValue(catopts[field])
+                    input.Bind(wx.EVT_CHECKBOX, self.OnChange)
 
-        grid.AddStretchSpacer()
-        grid.AddStretchSpacer()
-        grid.AddStretchSpacer()
+                    grid.Add(input)
+                    grid.AddStretchSpacer()
+                else:
+                    text = wx.StaticText(self, wx.ID_ANY, name)
+                    grid.Add(text)
 
-        if 'graph' not in self.options:
-            self.options['graph'] = {}
-        for (name, default) in [('Radius', 40), ('Padding', 5),
-                                ('Arrow Width', 5), ('Arrow Length', 5)]:
-            key = name.replace(' ', '').lower()
-            text = wx.StaticText(self, wx.ID_ANY, name)
-            grid.Add(text)
+                    input = wx.TextCtrl(self, wx.ID_ANY)
+                    self._keys[input.GetId()] = (category, field)
+                    self._inputs[category, field] = input
+                    input.SetValue(str(catopts[field]))
+                    input.Bind(wx.EVT_KILL_FOCUS, self.OnChange)
 
-            input = wx.TextCtrl(self, wx.ID_ANY)
-            self._keys[input.GetId()] = key
-            self._inputs[key] = input
-            if key in self.options['graph']:
-                input.SetValue(str(self.options['graph'][key]))
-            else:
-                self.options['graph'][key] = default
-                input.SetValue(str(default))
-            input.Bind(wx.EVT_KILL_FOCUS, self.OnFloatChange)
+                    grid.Add(input)
 
-            grid.Add(input)
+            grid.AddStretchSpacer()
+            grid.AddStretchSpacer()
 
         sizer.Add(grid)
         self.SetSizer(sizer)
 
-    def OnCheckboxChange(self, event):
-        key = self._keys[event.GetId()]
-        self.options['tree'][key] = self._inputs[key].GetValue()
-        wx.PostEvent(self, ConfigChangedEvent())
-
-    def OnFloatChange(self, event):
+    def OnChange(self, event):
         key = self._keys[event.GetId()]
         try:
-            self.options['graph'][key] = float(self._inputs[key].GetValue())
+            self.options[key] = self._inputs[key].GetValue()
             self._inputs[key].SetBackgroundColour('#FFFFFF')
-        except ValueError:
+        except pyggdrasil.model.validate.ValidationException:
             self._inputs[key].SetBackgroundColour('#FF6060')
 
         wx.PostEvent(self, ConfigChangedEvent())

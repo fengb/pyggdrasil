@@ -1,5 +1,7 @@
 import operator
 
+from . import validate
+
 
 class CircularTreeException(Exception): pass
 
@@ -110,3 +112,19 @@ class EqualsDict(object):
                 return item[0]
 
         raise KeyError(value)
+
+
+def Options(values={}):
+    options = validate.ValidationDict({
+        'tree': {
+            'sort': validate.Bool(True),
+        },
+        'graph': {
+            'radius': validate.Float(40, min=1),
+            'padding': validate.Float(5, min=0),
+            'arrow_length': validate.Float(5, min=0),
+            'arrow_width': validate.Float(5, min=0),
+        },
+    })
+    options.load(values)
+    return options
